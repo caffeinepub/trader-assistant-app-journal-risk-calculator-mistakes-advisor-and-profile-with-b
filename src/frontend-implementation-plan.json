@@ -1,0 +1,91 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Admin panel gating by single admin account and removal of admin password prompt",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Hide all Admin Panel entry points unless the logged-in account matches the admin email (no separate admin password screen).",
+      "acceptanceCriteria": [
+        "When logged in as any non-admin user, the UI does not show any Admin Panel entry points (buttons/links/routes/sections).",
+        "When logged in as the admin account (\"yug553496@gmail.com\"), the Admin Panel entry point is visible and navigates directly to the Admin Panel without prompting for an admin password."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/tabs/ProfileTab.tsx",
+          "operation": "modify",
+          "description": "Gate the Admin section visibility and navigation by checking the authenticated user's identity against the single admin account (\"yug553496@gmail.com\"). Replace the current click-to-open AdminAccessDialog flow with direct navigation to the Admin Panel only when the user is the admin. Ensure all user-facing text remains in English."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add a small, composable query hook to fetch admin status from the backend (e.g., using existing backend capability isCallerAdmin/getCallerUserRole) and expose a simple boolean used by ProfileTab to hide/show Admin entry points. Use the selected \"authorization\" component capabilities via backend-provided role checks in the UI logic (verify the component's usage instructions before implementing)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Remove the admin password verification UI/logic and update copy so Admin Panel access is based only on being authenticated as the admin account.",
+      "acceptanceCriteria": [
+        "AdminAccessDialog (or any equivalent password prompt) is not required to enter Admin Panel.",
+        "There is no hardcoded admin password check remaining in the admin access flow.",
+        "All user-facing text is in English and does not instruct the user to enter an admin password to access Admin Panel."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/admin/AdminAccessDialog.tsx",
+          "operation": "delete",
+          "description": "Remove the admin password dialog component entirely (including the hardcoded password check) so it cannot be used by any flow."
+        },
+        {
+          "path": "frontend/src/tabs/ProfileTab.tsx",
+          "operation": "modify",
+          "description": "Remove all imports/state/handlers referencing AdminAccessDialog and any admin-password-related copy. Ensure the Admin Panel is entered directly for the admin account only, and no UI text references an admin password."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Update unauthorized/error-state copy to remove any suggestion of verifying a password/credentials; show a clear English message indicating the user is not authorized to access admin data."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Ensure the Admin Panel UI supports admin actions: activate subscription for an individual user, manage payment methods, manage discounts, and kick out a specific user.",
+      "acceptanceCriteria": [
+        "Admin can select a specific user and activate a subscription plan for that user only (does not affect other users).",
+        "Admin can add/update/remove payment methods/payment options visible in the app where applicable.",
+        "Admin can create/update/remove discount options and apply them where applicable.",
+        "Admin can trigger a 'kick out' action for a specific user, and the kicked user is forced out of the app session on their next interaction (e.g., they see an access/session-ended state and must log in again).",
+        "All these actions are rejected by the backend for non-admin callers."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add React Query mutations and queries for the existing backend admin capabilities needed by the Admin Panel UI: activate/cancel subscription for a selected user, create/update/delete/list payment methods, create/update/delete/list discounts, and remove/kick a user. Ensure admin-related failures are handled gracefully with English toast/error messages. Use the selected \"authorization\" component capabilities via backend-provided role checks in the UI logic (verify the component's usage instructions before implementing)."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminUserDetailDialog.tsx",
+          "operation": "modify",
+          "description": "Extend the user detail modal to include admin controls for (1) activating/canceling a subscription plan for this specific user and (2) kicking/removing this specific user. Wire the controls to the new hooks in useQueries.ts, and show confirmation prompts and success/error feedback in English."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Add Admin Panel UI entry points (e.g., header buttons or section cards) to open dialogs for managing Payment Methods and Discounts. Keep these controls visible only within the Admin Panel view (which is already gated by REQ-1), and wire them to the new management dialogs."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminPaymentMethodsDialog.tsx",
+          "operation": "create",
+          "description": "Create an admin-only dialog for listing and managing payment methods (add/update/remove/enable/disable) using existing shadcn/ui dialog/form primitives (compose only; do not edit frontend/src/components/ui). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminDiscountsDialog.tsx",
+          "operation": "create",
+          "description": "Create an admin-only dialog for listing and managing discounts (create/update/remove/enable/disable and validity) using existing shadcn/ui dialog/form primitives (compose only; do not edit frontend/src/components/ui). Verify the component's usage instructions before implementing."
+        }
+      ]
+    }
+  ]
+}

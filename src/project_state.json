@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "Project now includes an admin panel restricted to a single admin account (yug553496@gmail.com) with admin-only controls for subscriptions, payments/discounts, and user session management.",
+  "architectural_notes": [
+    "Admin authorization is determined by logged-in email equality check (yug553496@gmail.com); non-admin users must not see admin UI/routes.",
+    "Admin panel does not prompt for an additional password once the admin email is authenticated (Option B)."
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-restrict-admin-panel-visibility-so-it-is-not-shown-to-any-user-unless-they-are-logged-in-as-the-admin-account-identified-by-the-email-yug553496-gmail-com-option-b-no-extra-admin-password-screen",
+      "title": "Restrict Admin Panel visibility so it is not shown to any user unless they are logged in as the admin account identified by the email \"yug553496@gmail.com\" (Option B: no extra admin password screen).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-admin-password-verification-flow-from-the-admin-panel-access-path-so-that-admin-access-is-granted-solely-by-being-authenticated-as-the-admin-account-update-all-user-facing-copy-to-match-no-references-to-entering-an-admin-password",
+      "title": "Remove the admin password verification flow from the Admin Panel access path so that admin access is granted solely by being authenticated as the admin account; update all user-facing copy to match (no references to entering an admin password).",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-admin-panel-supports-these-admin-actions-for-individual-users-activate-a-subscription-plan-for-a-specific-user-add-manage-payment-methods-payment-options-create-manage-discount-options-and-kick-out-a-specific-user",
+      "title": "Ensure Admin Panel supports these admin actions for individual users: activate a subscription plan for a specific user; add/manage payment methods/payment options; create/manage discount options; and kick out a specific user.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Restrict admin panel visibility/access to only the account logged in with yug553496@gmail.com (remove admin panel for all other users)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "No additional password required to access/use the admin panel once logged in as the admin email (Option B)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Admin can activate subscription plan for individual users",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Admin can add/manage payment methods/payment options",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Admin can create/manage discounts",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Admin can kick out (force logout/remove session) any user",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Enforce server-side admin authorization for all admin operations and all admin-only data access, ensuring non-admin callers cannot access admin queries or mutations even if they manipulate the frontend.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    }
+  ],
+  "projectName": "Restrict Admin Panel to Single Admin Account and Remove Admin Password Prompt",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

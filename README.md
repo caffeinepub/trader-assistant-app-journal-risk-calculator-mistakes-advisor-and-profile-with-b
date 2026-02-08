@@ -1,2 +1,3 @@
-# trader-assistant-app-journal-risk-calculator-mistakes-advisor-and-profile-with-b
-Exported from Caffeine project: Restrict Admin Panel to Single Admin Account and Remove Admin Password Prompt
+## 
+
+To run app build and run docker image: `docker build -t app . docker run -it --network host app`

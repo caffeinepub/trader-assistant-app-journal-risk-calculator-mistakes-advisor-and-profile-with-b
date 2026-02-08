@@ -1,0 +1,69 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-restrict-admin-panel-visibility-so-it-is-not-shown-to-any-user-unless-they-are-logged-in-as-the-admin-account-identified-by-the-email-yug553496-gmail-com-option-b-no-extra-admin-password-screen",
+      "featureTitle": "Restrict Admin Panel visibility so it is not shown to any user unless they are logged in as the admin account identified by the email \"yug553496@gmail.com\" (Option B: no extra admin password screen).",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/tabs/ProfileTab.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-remove-the-admin-password-verification-flow-from-the-admin-panel-access-path-so-that-admin-access-is-granted-solely-by-being-authenticated-as-the-admin-account-update-all-user-facing-copy-to-match-no-references-to-entering-an-admin-password",
+      "featureTitle": "Remove the admin password verification flow from the Admin Panel access path so that admin access is granted solely by being authenticated as the admin account; update all user-facing copy to match (no references to entering an admin password).",
+      "files": [
+        "frontend/src/components/admin/AdminAccessDialog.tsx",
+        "frontend/src/components/admin/AdminPanel.tsx",
+        "frontend/src/tabs/ProfileTab.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-admin-panel-supports-these-admin-actions-for-individual-users-activate-a-subscription-plan-for-a-specific-user-add-manage-payment-methods-payment-options-create-manage-discount-options-and-kick-out-a-specific-user",
+      "featureTitle": "Ensure Admin Panel supports these admin actions for individual users: activate a subscription plan for a specific user; add/manage payment methods/payment options; create/manage discount options; and kick out a specific user.",
+      "files": [
+        "frontend/src/components/admin/AdminDiscountsDialog.tsx",
+        "frontend/src/components/admin/AdminPanel.tsx",
+        "frontend/src/components/admin/AdminPaymentMethodsDialog.tsx",
+        "frontend/src/components/admin/AdminUserDetailDialog.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

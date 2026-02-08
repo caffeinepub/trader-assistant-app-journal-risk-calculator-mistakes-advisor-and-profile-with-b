@@ -1,0 +1,70 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-08T02:46:18.592Z",
+  "summary": "Diff adds new admin UI dialogs for managing payment methods and discounts, expands AdminPanel/AdminUserDetailDialog, introduces admin React Query hooks usage, and updates backend/main.mo with authorization mixins plus new state/types for payment methods/discounts. However, evidence is incomplete/truncated for key requirements: full removal of the admin password prompt/flow, server-side enforcement across all admin methods, and the specific 'kick out' (force logout next interaction) behavior.",
+  "missing_requirements": [
+    {
+      "id": "REQ-2",
+      "requirement": "Remove the admin password verification flow from the Admin Panel access path; no references to entering an admin password.",
+      "reason": "AdminAccessDialog.tsx is listed as modified, but the diff summary provides no content showing the password prompt/check was removed or that user-facing copy was updated to remove admin-password references.",
+      "evidence": [
+        "frontend/src/components/admin/AdminAccessDialog.tsx (modified, no content shown)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Enforce server-side admin authorization for all admin operations and all admin-only data access.",
+      "reason": "backend/main.mo is truncated and does not show the admin-only methods (queries/mutations) nor explicit checks/rejections for non-admin callers on those endpoints, so enforcement for 'all admin operations' cannot be verified from the provided diff summary.",
+      "evidence": [
+        "backend/main.mo (modified, truncated; only shows inclusion of authorization mixins and added types/state)"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Support a 'kick out' action for a specific user that forces the user out of the app session on their next interaction.",
+      "reason": "The shown admin user dialog uses a hook named useAdminRemoveUser, which suggests deletion/removal rather than a reversible session invalidation / forced logout on next interaction. No backend/session invalidation mechanism is visible in the diff summary.",
+      "evidence": [
+        "frontend/src/components/admin/AdminUserDetailDialog.tsx (uses useAdminRemoveUser)",
+        "backend/main.mo (truncated; no session/kick mechanism shown)"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Admin ability to cancel a user's subscription.",
+      "reason": "REQ-4 lists activating a subscription for a specific user, but does not request a cancel-subscription admin action; the UI includes useAdminCancelSubscription.",
+      "evidence": [
+        "frontend/src/components/admin/AdminUserDetailDialog.tsx (imports/uses useAdminCancelSubscription)"
+      ]
+    },
+    {
+      "description": "Admin ability to remove/delete a user (as opposed to 'kick out'/force logout).",
+      "reason": "REQ-4 requests a 'kick out' action (force session ended on next interaction), not user deletion/removal; the UI includes useAdminRemoveUser and a 'remove' confirm flow.",
+      "evidence": [
+        "frontend/src/components/admin/AdminUserDetailDialog.tsx (imports/uses useAdminRemoveUser)"
+      ]
+    },
+    {
+      "description": "Added backend migration module stub.",
+      "reason": "A new backend/migration.mo is added but contains only a no-op run; this is not explicitly requested (though it may be incidental).",
+      "evidence": [
+        "backend/migration.mo (added)"
+      ]
+    }
+  ],
+  "confidence": 0.56,
+  "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/components/admin/AdminAccessDialog.tsx",
+    "frontend/src/components/admin/AdminDiscountsDialog.tsx",
+    "frontend/src/components/admin/AdminPanel.tsx",
+    "frontend/src/components/admin/AdminPaymentMethodsDialog.tsx",
+    "frontend/src/components/admin/AdminUserDetailDialog.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/tabs/ProfileTab.tsx",
+    "project_state.json"
+  ]
+}
