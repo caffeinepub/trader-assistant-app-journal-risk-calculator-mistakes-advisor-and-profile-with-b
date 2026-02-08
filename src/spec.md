@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Limit Admin Panel access to a single admin account (yug553496@gmail.com) without any separate admin password prompt, while enforcing admin-only operations on the backend.
+**Goal:** Add a Light/Dark theme toggle in the Profile tab so users can switch the app appearance and have the choice persist across reloads.
 
 **Planned changes:**
-- Update the frontend so Admin Panel entry points (links/buttons/routes/sections) are only visible and accessible when logged in as yug553496@gmail.com.
-- Remove the admin password verification/prompt flow for Admin Panel access and update any related user-facing English copy to eliminate references to an admin password.
-- Add/verify server-side authorization checks so all admin-only backend queries/mutations reject non-admin callers even if the frontend is bypassed.
-- Ensure the Admin Panel supports per-user admin actions: activate a subscription plan for a selected user, manage payment methods/options, manage discount options, and kick out a selected user (force session end on next interaction).
+- Add an “Appearance” (or equivalent) section in the Profile tab with theme controls for “Light” and “Dark” (English labels).
+- Apply the selected theme immediately across the UI using the existing Tailwind/CSS variable theme setup.
+- Persist the selected theme in client storage (e.g., localStorage) and restore/apply it on app load.
+- Remove any unconditional runtime forcing of dark mode so Light theme is not overridden; update `document.documentElement` `dark` class and document `color-scheme` to match the selected theme.
 
-**User-visible outcome:** Non-admin users no longer see or can access the Admin Panel. The admin user (yug553496@gmail.com) can open Admin Panel directly (no password prompt) and perform user-specific subscription activation, manage payment/discount options, and kick out users, with all admin actions protected server-side.
+**User-visible outcome:** Users can select Light or Dark theme from the Profile tab, see the UI update instantly, and keep their preferred theme after refreshing or reopening the app.

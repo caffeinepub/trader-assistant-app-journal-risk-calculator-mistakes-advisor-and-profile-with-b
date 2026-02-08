@@ -21,17 +21,17 @@ import { SubscriptionPlan } from '../../backend';
 import PaymentView from './PaymentView';
 
 export default function SubscriptionsView() {
-  const [selectedPlan, setSelectedPlan] = useState<{ plan: SubscriptionPlan; price: number } | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const { data: subscriptionState } = useGetSubscriptionState();
   const entitlement = useEntitlement();
   const selectPlan = useSelectSubscriptionPlan();
   const cancelTrial = useCancelTrial();
 
-  const handleSelectPlan = (plan: SubscriptionPlan, price: number) => {
+  const handleSelectPlan = (plan: SubscriptionPlan) => {
     selectPlan.mutate(plan, {
       onSuccess: () => {
-        setSelectedPlan({ plan, price });
+        setSelectedPlan(plan);
       },
     });
   };
@@ -49,7 +49,7 @@ export default function SubscriptionsView() {
   };
 
   if (selectedPlan) {
-    return <PaymentView plan={selectedPlan.plan} price={selectedPlan.price} onBack={handleBackToPlans} />;
+    return <PaymentView plan={selectedPlan} onBack={handleBackToPlans} />;
   }
 
   const plans = [
@@ -58,7 +58,7 @@ export default function SubscriptionsView() {
       price: 299,
       plan: SubscriptionPlan.basic,
       features: ['Journal Your Trades', 'Track Performance', 'View Analytics'],
-      color: 'bg-blue-50 border-blue-200',
+      color: 'bg-emerald-50 border-emerald-200',
       badge: 'Basic',
       validity: '31 days',
     },
@@ -67,7 +67,7 @@ export default function SubscriptionsView() {
       price: 799,
       plan: SubscriptionPlan.pro,
       features: ['Journal Your Trades', 'Lot Size Calculator', 'Risk Management Tools', 'Advanced Analytics'],
-      color: 'bg-purple-50 border-purple-200',
+      color: 'bg-amber-50 border-amber-200',
       badge: 'Pro',
       popular: true,
       validity: '31 days',
@@ -83,7 +83,7 @@ export default function SubscriptionsView() {
         'AI-Powered Suggestions',
         'Full Analytics Suite',
       ],
-      color: 'bg-gradient-to-br from-blue-50 to-purple-50 border-blue-300',
+      color: 'bg-gradient-to-br from-emerald-50 to-amber-50 border-emerald-300',
       badge: 'Premium',
       validity: '31 days',
     },
@@ -97,7 +97,7 @@ export default function SubscriptionsView() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-blue-500" />
+                <CreditCard className="w-5 h-5 text-emerald-600" />
                 Your Subscription
               </CardTitle>
               <CardDescription>Current plan and features</CardDescription>
@@ -137,7 +137,7 @@ export default function SubscriptionsView() {
               <Alert className="bg-green-50 border-green-200">
                 <Sparkles className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  You're currently on a 2-day free trial with access to all features. You can purchase a plan during your trial or wait until it expires.
+                  You're currently on a 2-day free trial with access to all features. Submit payment for admin approval to continue after trial.
                 </AlertDescription>
               </Alert>
               <Button
@@ -156,7 +156,7 @@ export default function SubscriptionsView() {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Your trial has expired. Please select a plan below to continue using the app.
+                Your trial has expired. Please select a plan below and submit payment for admin approval.
               </AlertDescription>
             </Alert>
           )}
@@ -171,8 +171,8 @@ export default function SubscriptionsView() {
           <h2 className="text-3xl font-bold mb-2">Choose Your Plan</h2>
           <p className="text-muted-foreground">
             {entitlement.isTrial 
-              ? 'Upgrade anytime during your trial or after it expires' 
-              : 'Select a plan that fits your trading needs'}
+              ? 'Submit payment anytime during your trial for admin approval' 
+              : 'Select a plan and submit payment for admin approval'}
           </p>
         </div>
 
@@ -184,7 +184,7 @@ export default function SubscriptionsView() {
             >
               {planOption.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-blue-600">Most Popular</Badge>
+                  <Badge className="bg-emerald-600">Most Popular</Badge>
                 </div>
               )}
               <CardHeader>
@@ -208,8 +208,8 @@ export default function SubscriptionsView() {
                   ))}
                 </ul>
                 <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  onClick={() => handleSelectPlan(planOption.plan, planOption.price)}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => handleSelectPlan(planOption.plan)}
                   disabled={selectPlan.isPending}
                 >
                   {selectPlan.isPending ? 'Selecting...' : 'Select Plan'}

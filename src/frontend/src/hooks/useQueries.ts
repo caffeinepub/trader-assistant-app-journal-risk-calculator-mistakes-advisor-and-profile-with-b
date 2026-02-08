@@ -1,103 +1,27 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useActorWithStatus } from './useActorWithStatus';
-import type { UserProfile, TradeEntry, MistakeEntry, MistakeCategory, SubscriptionPlan, SubscriptionState, PaymentMethod, Discount } from '../backend';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useActor } from './useActor';
 import { toast } from 'sonner';
+import { safeErrorMessage } from '../lib/safeErrorMessage';
 import type { Principal } from '@icp-sdk/core/principal';
+import { SubscriptionPlan, TradeEntry, MistakeCategory, UserProfile, ExternalBlob } from '../backend';
 
-// User Profile Queries
-export function useGetCallerUserProfile() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+// ============ TRADE JOURNAL QUERIES ============
 
-  const query = useQuery<UserProfile | null>({
-    queryKey: ['currentUserProfile'],
-    queryFn: async () => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor) throw new Error('Actor not available');
-      return actor.getCallerUserProfile();
-    },
-    enabled: !!actor || hasError,
-    retry: false,
-  });
-
-  return {
-    ...query,
-    isLoading: isConnecting || query.isLoading,
-    isFetched: (!!actor || hasError) && query.isFetched,
-  };
-}
-
-export function useCreateUserProfile() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ fullName, username }: { fullName: string; username: string }) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
-      return actor.createUserProfile(fullName, username);
-    },
-    onSuccess: () => {
-      // Invalidate all subscription-related queries to show trial immediately
-      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
-      queryClient.invalidateQueries({ queryKey: ['callerPlan'] });
-      queryClient.invalidateQueries({ queryKey: ['subscriptionState'] });
-      toast.success('Profile created successfully! Your 2-day free trial has started.');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create profile');
-    },
-  });
-}
-
-export function useSaveUserProfile() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (profile: UserProfile) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
-      return actor.saveCallerUserProfile(profile);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
-      toast.success('Profile updated successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update profile');
-    },
-  });
-}
-
-// Trade Queries
 export function useGetAllTrades() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor, isFetching } = useActor();
 
-  return useQuery<TradeEntry[]>({
+  return useQuery({
     queryKey: ['trades'],
     queryFn: async () => {
-      if (hasError && error) {
-        throw error;
-      }
       if (!actor) return [];
       return actor.getAllTrades();
     },
-    enabled: !!actor || hasError,
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useCreateTrade() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -111,12 +35,7 @@ export function useCreateTrade() {
       riskAmount: number;
       outcome: boolean;
     }) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+      if (!actor) throw new Error('Actor not available');
       return actor.createTradeEntry(
         trade.tradeDate,
         trade.session,
@@ -130,328 +49,474 @@ export function useCreateTrade() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trades'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics'] });
       queryClient.invalidateQueries({ queryKey: ['tradeDates'] });
-      toast.success('Trade added successfully');
+      toast.success('Trade entry created successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to add trade');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
 export function useUpdateTrade() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ index, entry }: { index: bigint; entry: TradeEntry }) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+      if (!actor) throw new Error('Actor not available');
       return actor.updateTradeEntry(index, entry);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trades'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics'] });
       queryClient.invalidateQueries({ queryKey: ['tradeDates'] });
-      toast.success('Trade updated successfully');
+      toast.success('Trade entry updated successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update trade');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
 export function useDeleteTrade() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (index: bigint) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+      if (!actor) throw new Error('Actor not available');
       return actor.deleteTradeEntry(index);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trades'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics'] });
       queryClient.invalidateQueries({ queryKey: ['tradeDates'] });
-      toast.success('Trade deleted successfully');
+      toast.success('Trade entry deleted successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete trade');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
-// Mistake Queries
-export function useGetAllMistakes() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+// ============ MISTAKE TRACKING QUERIES ============
 
-  return useQuery<MistakeEntry[]>({
+export function useGetAllMistakes() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
     queryKey: ['mistakes'],
     queryFn: async () => {
-      if (hasError && error) {
-        throw error;
-      }
       if (!actor) return [];
       return actor.getAllMistakes();
     },
-    enabled: !!actor || hasError,
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useCreateMistake() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (mistake: { category: MistakeCategory; description: string; tradeDate: bigint }) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+    mutationFn: async (mistake: {
+      category: MistakeCategory;
+      description: string;
+      tradeDate: bigint;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
       return actor.createMistakeEntry(mistake.category, mistake.description, mistake.tradeDate);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mistakes'] });
-      toast.success('Mistake logged successfully');
+      toast.success('Mistake entry created successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to log mistake');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
 export function useUpdateMistake() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ mistakeId, description }: { mistakeId: bigint; description: string }) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+      if (!actor) throw new Error('Actor not available');
       return actor.updateMistakeEntry(mistakeId, description);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mistakes'] });
-      toast.success('Mistake updated successfully');
+      toast.success('Mistake entry updated successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update mistake');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
 export function useDeleteMistake() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (mistakeId: bigint) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+      if (!actor) throw new Error('Actor not available');
       return actor.deleteMistakeEntry(mistakeId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mistakes'] });
-      toast.success('Mistake deleted successfully');
+      toast.success('Mistake entry deleted successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete mistake');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
-// Analytics Queries
-export function useGetAnalytics(startDate?: bigint, endDate?: bigint) {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+// ============ ANALYTICS QUERIES ============
+
+export function useGetAllTradeDates() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['tradeDates'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllTradeDates();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetDailyProfit(date: bigint | null) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['dailyProfit', date?.toString()],
+    queryFn: async () => {
+      if (!actor || !date) return 0;
+      return actor.getDailyProfitForDate(date);
+    },
+    enabled: !!actor && !isFetching && date !== null,
+  });
+}
+
+export function useGetAnalytics(startDate: bigint | null, endDate: bigint | null) {
+  const { actor, isFetching } = useActor();
 
   return useQuery({
     queryKey: ['analytics', startDate?.toString(), endDate?.toString()],
     queryFn: async () => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor) return null;
-      return actor.getAnalytics(startDate ?? null, endDate ?? null);
+      if (!actor) throw new Error('Actor not available');
+      return actor.getAnalytics(startDate, endDate);
     },
-    enabled: !!actor || hasError,
+    enabled: !!actor && !isFetching,
   });
 }
 
-export function useGetAllTradeDates() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+// ============ USER PROFILE QUERIES ============
 
-  return useQuery<bigint[]>({
-    queryKey: ['tradeDates'],
+export function useGetCallerUserProfile() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  const query = useQuery<UserProfile | null>({
+    queryKey: ['currentUserProfile'],
     queryFn: async () => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor) return [];
-      return actor.getAllTradeDates();
+      if (!actor) throw new Error('Actor not available');
+      return actor.getCallerUserProfile();
     },
-    enabled: !!actor || hasError,
+    enabled: !!actor && !actorFetching,
+    retry: false,
+  });
+
+  return {
+    ...query,
+    isLoading: actorFetching || query.isLoading,
+    isFetched: !!actor && query.isFetched,
+  };
+}
+
+export function useCreateUserProfile() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ fullName, username }: { fullName: string; username: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.createUserProfile(fullName, username);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      toast.success('Profile created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(safeErrorMessage(error));
+    },
   });
 }
 
-// Subscription Queries
-export function useGetSubscriptionState() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+export function useSaveUserProfile() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
 
-  return useQuery<SubscriptionState | null>({
-    queryKey: ['subscriptionState'],
-    queryFn: async () => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor) return null;
-      return actor.getSubscriptionState();
+  return useMutation({
+    mutationFn: async (profile: UserProfile) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.saveCallerUserProfile(profile);
     },
-    enabled: !!actor || hasError,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      toast.success('Profile updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(safeErrorMessage(error));
+    },
   });
 }
+
+// ============ SUBSCRIPTION QUERIES ============
 
 export function useGetCallerPlan() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor, isFetching } = useActor();
 
   return useQuery({
     queryKey: ['callerPlan'],
     queryFn: async () => {
-      if (hasError && error) {
-        throw error;
-      }
       if (!actor) return null;
       return actor.getCallerPlan();
     },
-    enabled: !!actor || hasError,
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetSubscriptionState() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['subscriptionState'],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getSubscriptionState();
+    },
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useSelectSubscriptionPlan() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (plan: SubscriptionPlan) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
-      return actor.selectSubscriptionPlan(plan);
+      // This is a client-side only mutation to track selected plan
+      return plan;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscriptionState'] });
-      queryClient.invalidateQueries({ queryKey: ['callerPlan'] });
-      toast.success('Subscription plan activated successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to activate subscription plan');
+      // No backend call needed, just for UI state
     },
   });
 }
 
 export function useCancelTrial() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+      if (!actor) throw new Error('Actor not available');
       return actor.cancelTrial();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscriptionState'] });
       queryClient.invalidateQueries({ queryKey: ['callerPlan'] });
-      queryClient.invalidateQueries({ queryKey: ['trades'] });
-      queryClient.invalidateQueries({ queryKey: ['mistakes'] });
-      queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      queryClient.invalidateQueries({ queryKey: ['tradeDates'] });
       toast.success('Trial cancelled successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to cancel trial');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
-// Admin Queries
-export function useIsCallerAdmin() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+export function useSubmitPayment() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
 
-  return useQuery<boolean>({
-    queryKey: ['isCallerAdmin'],
+  return useMutation({
+    mutationFn: async ({
+      plan,
+      couponCode,
+      pointsRedeemed,
+      finalAmount,
+      transactionId,
+      fileType,
+      fileSize,
+      paymentProof,
+    }: {
+      plan: SubscriptionPlan;
+      couponCode: string | null;
+      pointsRedeemed: bigint;
+      finalAmount: bigint;
+      transactionId: string;
+      fileType: string;
+      fileSize: bigint;
+      paymentProof: Uint8Array;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.submitPaymentForSubscription(
+        plan,
+        couponCode,
+        pointsRedeemed,
+        finalAmount,
+        transactionId,
+        fileType,
+        fileSize,
+        paymentProof
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subscriptionState'] });
+      toast.success('Payment submitted successfully. Awaiting admin approval.');
+    },
+    onError: (error: Error) => {
+      toast.error(safeErrorMessage(error));
+    },
+  });
+}
+
+// ============ PAYMENT METHODS & DISCOUNTS ============
+
+export function useGetEnabledPaymentMethods() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['enabledPaymentMethods'],
     queryFn: async () => {
-      if (hasError && error) {
-        throw error;
-      }
+      if (!actor) return [];
+      return actor.getEnabledPaymentMethods();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetActiveDiscounts() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['activeDiscounts'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getActiveDiscounts();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+// ============ ADMIN QUERIES ============
+
+export function useIsLockedAdmin() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['isLockedAdmin'],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.isLockedAdmin();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useUnlockAdmin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (password: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.unlockAdmin(password);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['isLockedAdmin'] });
+      toast.success('Admin access unlocked successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(safeErrorMessage(error));
+    },
+  });
+}
+
+export function useIsPermanentAdmin() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['isPermanentAdmin'],
+    queryFn: async () => {
       if (!actor) return false;
       try {
-        return await actor.isCallerAdmin();
+        // Check if caller is a permanent admin by calling isCallerAdmin
+        // and checking if they are NOT in the temporary locked admin state
+        const isAdmin = await actor.isCallerAdmin();
+        const isLocked = await actor.isLockedAdmin();
+        // If admin but not locked (temporary), then they are permanent
+        return isAdmin && !isLocked;
       } catch {
         return false;
       }
     },
-    enabled: !!actor || hasError,
-    retry: false,
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useRotateAdminPassword() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async (newPassword: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.adminSetUnlockPassword(newPassword);
+    },
+    onSuccess: () => {
+      toast.success('Admin password updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(safeErrorMessage(error));
+    },
+  });
+}
+
+export function useGetAllUsersWithIds() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['allUsersWithIds'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllUsersWithIds();
+    },
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useGetAllUserData() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor, isFetching } = useActor();
 
-  return useQuery<[Principal, UserProfile, TradeEntry[], MistakeEntry[], SubscriptionState | null][]>({
+  return useQuery({
     queryKey: ['allUserData'],
     queryFn: async () => {
-      if (hasError && error) {
-        throw error;
-      }
       if (!actor) return [];
       return actor.getAllUserData();
     },
-    enabled: false,
-    retry: false,
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useAdminActivateSubscription() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ user, plan }: { user: Principal; plan: SubscriptionPlan }) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+      if (!actor) throw new Error('Actor not available');
       return actor.adminActivateSubscription(user, plan);
     },
     onSuccess: () => {
@@ -459,23 +524,18 @@ export function useAdminActivateSubscription() {
       toast.success('Subscription activated successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to activate subscription');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
 export function useAdminCancelSubscription() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (user: Principal) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+      if (!actor) throw new Error('Actor not available');
       return actor.adminCancelSubscription(user);
     },
     onSuccess: () => {
@@ -483,211 +543,344 @@ export function useAdminCancelSubscription() {
       toast.success('Subscription cancelled successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to cancel subscription');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
 export function useAdminRemoveUser() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (user: Principal) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+      if (!actor) throw new Error('Actor not available');
       return actor.adminRemoveUser(user);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allUserData'] });
+      queryClient.invalidateQueries({ queryKey: ['allUsersWithIds'] });
       toast.success('User removed successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to remove user');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
-// Payment Methods Admin Queries
-export function useAdminGetAllPaymentMethods() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+// ============ ADMIN PAYMENT METHODS ============
 
-  return useQuery<PaymentMethod[]>({
+export function useAdminGetAllPaymentMethods() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
     queryKey: ['adminPaymentMethods'],
     queryFn: async () => {
-      if (hasError && error) {
-        throw error;
-      }
       if (!actor) return [];
       return actor.adminGetAllPaymentMethods();
     },
-    enabled: false,
-    retry: false,
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useAdminCreatePaymentMethod() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ name, description }: { name: string; description: string }) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+      if (!actor) throw new Error('Actor not available');
       return actor.adminCreatePaymentMethod(name, description);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminPaymentMethods'] });
+      queryClient.invalidateQueries({ queryKey: ['enabledPaymentMethods'] });
       toast.success('Payment method created successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create payment method');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
 export function useAdminUpdatePaymentMethod() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, name, description, enabled }: { id: bigint; name: string; description: string; enabled: boolean }) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+    mutationFn: async ({
+      id,
+      name,
+      description,
+      enabled,
+    }: {
+      id: bigint;
+      name: string;
+      description: string;
+      enabled: boolean;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
       return actor.adminUpdatePaymentMethod(id, name, description, enabled);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminPaymentMethods'] });
+      queryClient.invalidateQueries({ queryKey: ['enabledPaymentMethods'] });
       toast.success('Payment method updated successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update payment method');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
 export function useAdminDeletePaymentMethod() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: bigint) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+      if (!actor) throw new Error('Actor not available');
       return actor.adminDeletePaymentMethod(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminPaymentMethods'] });
+      queryClient.invalidateQueries({ queryKey: ['enabledPaymentMethods'] });
       toast.success('Payment method deleted successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete payment method');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
-// Discounts Admin Queries
-export function useAdminGetAllDiscounts() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+// ============ ADMIN DISCOUNTS ============
 
-  return useQuery<Discount[]>({
+export function useAdminGetAllDiscounts() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
     queryKey: ['adminDiscounts'],
     queryFn: async () => {
-      if (hasError && error) {
-        throw error;
-      }
       if (!actor) return [];
       return actor.adminGetAllDiscounts();
     },
-    enabled: false,
-    retry: false,
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useAdminCreateDiscount() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ code, percentage, validUntil }: { code: string; percentage: number; validUntil: bigint }) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+    mutationFn: async ({
+      code,
+      percentage,
+      validUntil,
+    }: {
+      code: string;
+      percentage: number;
+      validUntil: bigint;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
       return actor.adminCreateDiscount(code, percentage, validUntil);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminDiscounts'] });
+      queryClient.invalidateQueries({ queryKey: ['activeDiscounts'] });
       toast.success('Discount created successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create discount');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
 export function useAdminUpdateDiscount() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, code, percentage, validUntil, enabled }: { id: bigint; code: string; percentage: number; validUntil: bigint; enabled: boolean }) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+    mutationFn: async ({
+      id,
+      code,
+      percentage,
+      validUntil,
+      enabled,
+    }: {
+      id: bigint;
+      code: string;
+      percentage: number;
+      validUntil: bigint;
+      enabled: boolean;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
       return actor.adminUpdateDiscount(id, code, percentage, validUntil, enabled);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminDiscounts'] });
+      queryClient.invalidateQueries({ queryKey: ['activeDiscounts'] });
       toast.success('Discount updated successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update discount');
+      toast.error(safeErrorMessage(error));
     },
   });
 }
 
 export function useAdminDeleteDiscount() {
-  const { actor, isConnecting, hasError, error } = useActorWithStatus();
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: bigint) => {
-      if (hasError && error) {
-        throw error;
-      }
-      if (!actor || isConnecting) {
-        throw new Error('Connecting to backend... Please wait a moment and try again.');
-      }
+      if (!actor) throw new Error('Actor not available');
       return actor.adminDeleteDiscount(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminDiscounts'] });
+      queryClient.invalidateQueries({ queryKey: ['activeDiscounts'] });
       toast.success('Discount deleted successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete discount');
+      toast.error(safeErrorMessage(error));
+    },
+  });
+}
+
+// ============ ADMIN PAYMENTS ============
+
+export function useAdminGetPendingPayments() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['adminPendingPayments'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.adminGetPendingPayments();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useAdminReviewAndApprovePayment() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (user: Principal) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.adminReviewAndApprovePayment(user);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminPendingPayments'] });
+      queryClient.invalidateQueries({ queryKey: ['allUserData'] });
+      toast.success('Payment approved and subscription activated');
+    },
+    onError: (error: Error) => {
+      toast.error(safeErrorMessage(error));
+    },
+  });
+}
+
+export function useAdminRejectPayment() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ user, reason }: { user: Principal; reason: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.adminRejectPayment(user, reason);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminPendingPayments'] });
+      toast.success('Payment rejected');
+    },
+    onError: (error: Error) => {
+      toast.error(safeErrorMessage(error));
+    },
+  });
+}
+
+export function useAdminGetPaymentProof() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async (user: Principal) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.adminGetPaymentProof(user);
+    },
+  });
+}
+
+export function useAdminDeletePaymentProof() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (user: Principal) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.adminDeletePaymentProof(user);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminPendingPayments'] });
+      toast.success('Payment proof deleted');
+    },
+    onError: (error: Error) => {
+      toast.error(safeErrorMessage(error));
+    },
+  });
+}
+
+// ============ PAYMENT QR CODE ============
+
+export function useGetPaymentQRCode() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['paymentQRCode'],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getPaymentQRCode();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useUploadPaymentQRCode() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (blob: ExternalBlob) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.uploadPaymentQRCode(blob);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paymentQRCode'] });
+      toast.success('Payment QR code uploaded successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(safeErrorMessage(error));
+    },
+  });
+}
+
+export function useClearPaymentQRCode() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.clearPaymentQRCode();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paymentQRCode'] });
+      toast.success('Payment QR code cleared successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(safeErrorMessage(error));
     },
   });
 }

@@ -8,6 +8,17 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const _CaffeineStorageCreateCertificateResult = IDL.Record({
+  'method' : IDL.Text,
+  'blob_hash' : IDL.Text,
+});
+export const _CaffeineStorageRefillInformation = IDL.Record({
+  'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
+});
+export const _CaffeineStorageRefillResult = IDL.Record({
+  'success' : IDL.Opt(IDL.Bool),
+  'topped_up_amount' : IDL.Opt(IDL.Nat),
+});
 export const SubscriptionPlan = IDL.Variant({
   'pro' : IDL.Null,
   'premium' : IDL.Null,
@@ -26,6 +37,18 @@ export const PaymentMethod = IDL.Record({
   'name' : IDL.Text,
   'description' : IDL.Text,
   'enabled' : IDL.Bool,
+});
+export const PendingPayment = IDL.Record({
+  'couponCode' : IDL.Opt(IDL.Text),
+  'finalAmount' : IDL.Nat,
+  'plan' : SubscriptionPlan,
+  'user' : IDL.Principal,
+  'submittedAt' : Time,
+  'fileSize' : IDL.Nat,
+  'fileType' : IDL.Text,
+  'paymentProof' : IDL.Vec(IDL.Nat8),
+  'pointsRedeemed' : IDL.Nat,
+  'transactionId' : IDL.Text,
 });
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
@@ -72,8 +95,35 @@ export const SubscriptionState = IDL.Record({
   'plan' : IDL.Opt(SubscriptionPlan),
   'trialStart' : Time,
 });
+export const ExternalBlob = IDL.Vec(IDL.Nat8);
 
 export const idlService = IDL.Service({
+  '_caffeineStorageBlobIsLive' : IDL.Func(
+      [IDL.Vec(IDL.Nat8)],
+      [IDL.Bool],
+      ['query'],
+    ),
+  '_caffeineStorageBlobsToDelete' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Vec(IDL.Nat8))],
+      ['query'],
+    ),
+  '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
+      [IDL.Vec(IDL.Vec(IDL.Nat8))],
+      [],
+      [],
+    ),
+  '_caffeineStorageCreateCertificate' : IDL.Func(
+      [IDL.Text],
+      [_CaffeineStorageCreateCertificateResult],
+      [],
+    ),
+  '_caffeineStorageRefillCashier' : IDL.Func(
+      [IDL.Opt(_CaffeineStorageRefillInformation)],
+      [_CaffeineStorageRefillResult],
+      [],
+    ),
+  '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'adminActivateSubscription' : IDL.Func(
       [IDL.Principal, SubscriptionPlan],
@@ -93,13 +143,27 @@ export const idlService = IDL.Service({
     ),
   'adminDeleteDiscount' : IDL.Func([IDL.Nat], [], []),
   'adminDeletePaymentMethod' : IDL.Func([IDL.Nat], [], []),
+  'adminDeletePaymentProof' : IDL.Func([IDL.Principal], [], []),
   'adminGetAllDiscounts' : IDL.Func([], [IDL.Vec(Discount)], ['query']),
   'adminGetAllPaymentMethods' : IDL.Func(
       [],
       [IDL.Vec(PaymentMethod)],
       ['query'],
     ),
+  'adminGetPaymentProof' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Opt(IDL.Vec(IDL.Nat8))],
+      ['query'],
+    ),
+  'adminGetPendingPayments' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, PendingPayment))],
+      ['query'],
+    ),
+  'adminRejectPayment' : IDL.Func([IDL.Principal, IDL.Text], [], []),
   'adminRemoveUser' : IDL.Func([IDL.Principal], [], []),
+  'adminReviewAndApprovePayment' : IDL.Func([IDL.Principal], [], []),
+  'adminSetUnlockPassword' : IDL.Func([IDL.Text], [], []),
   'adminUpdateDiscount' : IDL.Func(
       [IDL.Nat, IDL.Text, IDL.Float64, Time, IDL.Bool],
       [],
@@ -112,6 +176,7 @@ export const idlService = IDL.Service({
     ),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'cancelTrial' : IDL.Func([], [], []),
+  'clearPaymentQRCode' : IDL.Func([], [], []),
   'createMistakeEntry' : IDL.Func(
       [MistakeCategory, IDL.Text, Time],
       [MistakeEntry],
@@ -199,6 +264,7 @@ export const idlService = IDL.Service({
       [IDL.Vec(PaymentMethod)],
       ['query'],
     ),
+  'getPaymentQRCode' : IDL.Func([], [IDL.Opt(ExternalBlob)], ['query']),
   'getSubscriptionState' : IDL.Func(
       [],
       [IDL.Opt(SubscriptionState)],
@@ -214,17 +280,47 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'grantAdminRole' : IDL.Func([IDL.Principal], [], []),
+  'healthCheck' : IDL.Func([], [IDL.Text], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'isLockedAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isUserRegistered' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
+  'revokeAdminRole' : IDL.Func([IDL.Principal], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-  'selectSubscriptionPlan' : IDL.Func([SubscriptionPlan], [], []),
+  'submitPaymentForSubscription' : IDL.Func(
+      [
+        SubscriptionPlan,
+        IDL.Opt(IDL.Text),
+        IDL.Nat,
+        IDL.Nat,
+        IDL.Text,
+        IDL.Text,
+        IDL.Nat,
+        IDL.Vec(IDL.Nat8),
+      ],
+      [],
+      [],
+    ),
+  'unlockAdmin' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'updateMistakeEntry' : IDL.Func([IDL.Nat, IDL.Text], [], []),
   'updateTradeEntry' : IDL.Func([IDL.Nat, TradeEntry], [], []),
+  'uploadPaymentQRCode' : IDL.Func([ExternalBlob], [], []),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const _CaffeineStorageCreateCertificateResult = IDL.Record({
+    'method' : IDL.Text,
+    'blob_hash' : IDL.Text,
+  });
+  const _CaffeineStorageRefillInformation = IDL.Record({
+    'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
+  });
+  const _CaffeineStorageRefillResult = IDL.Record({
+    'success' : IDL.Opt(IDL.Bool),
+    'topped_up_amount' : IDL.Opt(IDL.Nat),
+  });
   const SubscriptionPlan = IDL.Variant({
     'pro' : IDL.Null,
     'premium' : IDL.Null,
@@ -243,6 +339,18 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'description' : IDL.Text,
     'enabled' : IDL.Bool,
+  });
+  const PendingPayment = IDL.Record({
+    'couponCode' : IDL.Opt(IDL.Text),
+    'finalAmount' : IDL.Nat,
+    'plan' : SubscriptionPlan,
+    'user' : IDL.Principal,
+    'submittedAt' : Time,
+    'fileSize' : IDL.Nat,
+    'fileType' : IDL.Text,
+    'paymentProof' : IDL.Vec(IDL.Nat8),
+    'pointsRedeemed' : IDL.Nat,
+    'transactionId' : IDL.Text,
   });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
@@ -289,8 +397,35 @@ export const idlFactory = ({ IDL }) => {
     'plan' : IDL.Opt(SubscriptionPlan),
     'trialStart' : Time,
   });
+  const ExternalBlob = IDL.Vec(IDL.Nat8);
   
   return IDL.Service({
+    '_caffeineStorageBlobIsLive' : IDL.Func(
+        [IDL.Vec(IDL.Nat8)],
+        [IDL.Bool],
+        ['query'],
+      ),
+    '_caffeineStorageBlobsToDelete' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
+    '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
+        [IDL.Vec(IDL.Vec(IDL.Nat8))],
+        [],
+        [],
+      ),
+    '_caffeineStorageCreateCertificate' : IDL.Func(
+        [IDL.Text],
+        [_CaffeineStorageCreateCertificateResult],
+        [],
+      ),
+    '_caffeineStorageRefillCashier' : IDL.Func(
+        [IDL.Opt(_CaffeineStorageRefillInformation)],
+        [_CaffeineStorageRefillResult],
+        [],
+      ),
+    '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'adminActivateSubscription' : IDL.Func(
         [IDL.Principal, SubscriptionPlan],
@@ -310,13 +445,27 @@ export const idlFactory = ({ IDL }) => {
       ),
     'adminDeleteDiscount' : IDL.Func([IDL.Nat], [], []),
     'adminDeletePaymentMethod' : IDL.Func([IDL.Nat], [], []),
+    'adminDeletePaymentProof' : IDL.Func([IDL.Principal], [], []),
     'adminGetAllDiscounts' : IDL.Func([], [IDL.Vec(Discount)], ['query']),
     'adminGetAllPaymentMethods' : IDL.Func(
         [],
         [IDL.Vec(PaymentMethod)],
         ['query'],
       ),
+    'adminGetPaymentProof' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Opt(IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
+    'adminGetPendingPayments' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, PendingPayment))],
+        ['query'],
+      ),
+    'adminRejectPayment' : IDL.Func([IDL.Principal, IDL.Text], [], []),
     'adminRemoveUser' : IDL.Func([IDL.Principal], [], []),
+    'adminReviewAndApprovePayment' : IDL.Func([IDL.Principal], [], []),
+    'adminSetUnlockPassword' : IDL.Func([IDL.Text], [], []),
     'adminUpdateDiscount' : IDL.Func(
         [IDL.Nat, IDL.Text, IDL.Float64, Time, IDL.Bool],
         [],
@@ -329,6 +478,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'cancelTrial' : IDL.Func([], [], []),
+    'clearPaymentQRCode' : IDL.Func([], [], []),
     'createMistakeEntry' : IDL.Func(
         [MistakeCategory, IDL.Text, Time],
         [MistakeEntry],
@@ -416,6 +566,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(PaymentMethod)],
         ['query'],
       ),
+    'getPaymentQRCode' : IDL.Func([], [IDL.Opt(ExternalBlob)], ['query']),
     'getSubscriptionState' : IDL.Func(
         [],
         [IDL.Opt(SubscriptionState)],
@@ -431,12 +582,31 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'grantAdminRole' : IDL.Func([IDL.Principal], [], []),
+    'healthCheck' : IDL.Func([], [IDL.Text], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'isLockedAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isUserRegistered' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
+    'revokeAdminRole' : IDL.Func([IDL.Principal], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-    'selectSubscriptionPlan' : IDL.Func([SubscriptionPlan], [], []),
+    'submitPaymentForSubscription' : IDL.Func(
+        [
+          SubscriptionPlan,
+          IDL.Opt(IDL.Text),
+          IDL.Nat,
+          IDL.Nat,
+          IDL.Text,
+          IDL.Text,
+          IDL.Nat,
+          IDL.Vec(IDL.Nat8),
+        ],
+        [],
+        [],
+      ),
+    'unlockAdmin' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'updateMistakeEntry' : IDL.Func([IDL.Nat, IDL.Text], [], []),
     'updateTradeEntry' : IDL.Func([IDL.Nat, TradeEntry], [], []),
+    'uploadPaymentQRCode' : IDL.Func([ExternalBlob], [], []),
   });
 };
 

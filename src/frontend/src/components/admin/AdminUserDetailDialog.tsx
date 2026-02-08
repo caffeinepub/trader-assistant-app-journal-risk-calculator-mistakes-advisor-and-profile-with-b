@@ -122,33 +122,35 @@ export default function AdminUserDetailDialog({
             {/* User Profile Section */}
             <Card>
               <CardContent className="pt-6 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-xl font-semibold">{profile.fullName}</h3>
-                    <p className="text-sm text-muted-foreground">@{profile.username}</p>
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <h3 className="text-xl font-semibold break-words">{profile.fullName}</h3>
+                    <p className="text-sm text-muted-foreground break-words">@{profile.username}</p>
                     <p className="text-sm font-mono text-blue-600 font-semibold">
                       {formatSequentialUserId(profile.userId)}
                     </p>
                   </div>
-                  {getPlanBadge(subscriptionState?.plan ?? null)}
+                  <div className="shrink-0">
+                    {getPlanBadge(subscriptionState?.plan ?? null)}
+                  </div>
                 </div>
 
                 <Separator />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <p className="text-sm text-muted-foreground flex items-center gap-2">
-                      <User className="w-4 h-4" />
+                      <User className="w-4 h-4 shrink-0" />
                       Principal ID
                     </p>
                     <p className="text-xs font-mono break-all">{principal.toString()}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
+                      <Calendar className="w-4 h-4 shrink-0" />
                       Member Since
                     </p>
-                    <p className="text-sm font-medium">{formatDate(profile.dateJoined)}</p>
+                    <p className="text-sm font-medium break-words">{formatDate(profile.dateJoined)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -157,7 +159,7 @@ export default function AdminUserDetailDialog({
             {/* Statistics Section */}
             <Card>
               <CardContent className="pt-6">
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="text-center">
                     <TrendingUp className="w-6 h-6 text-blue-500 mx-auto mb-2" />
                     <p className="text-3xl font-bold">{trades.length}</p>
@@ -170,7 +172,7 @@ export default function AdminUserDetailDialog({
                   </div>
                   <div className="text-center">
                     <CreditCard className="w-6 h-6 text-green-500 mx-auto mb-2" />
-                    <p className="text-sm font-medium">{getSubscriptionStatus(subscriptionState)}</p>
+                    <p className="text-sm font-medium break-words">{getSubscriptionStatus(subscriptionState)}</p>
                     <p className="text-sm text-muted-foreground">Subscription</p>
                   </div>
                 </div>
@@ -185,7 +187,7 @@ export default function AdminUserDetailDialog({
                 {/* Activate Subscription */}
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Activate Subscription Plan</p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Select value={selectedPlan ?? undefined} onValueChange={(value) => setSelectedPlan(value as SubscriptionPlan)}>
                       <SelectTrigger className="flex-1">
                         <SelectValue placeholder="Select a plan" />
@@ -199,7 +201,7 @@ export default function AdminUserDetailDialog({
                     <Button
                       onClick={() => setShowActivateConfirm(true)}
                       disabled={!selectedPlan || activateSubscription.isPending}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-green-600 hover:bg-green-700 shrink-0"
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
                       Activate
@@ -249,11 +251,11 @@ export default function AdminUserDetailDialog({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Activate Subscription</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="break-words">
               Are you sure you want to activate the {selectedPlan} plan for {profile.fullName}? This will grant them immediate access to the plan features for 31 days.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
             <AlertDialogCancel disabled={activateSubscription.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleActivateSubscription}
@@ -271,11 +273,11 @@ export default function AdminUserDetailDialog({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="break-words">
               Are you sure you want to cancel the subscription for {profile.fullName}? They will lose access to paid features immediately.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
             <AlertDialogCancel disabled={cancelSubscription.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelSubscription}
@@ -293,16 +295,16 @@ export default function AdminUserDetailDialog({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove User</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="break-words">
               Are you sure you want to remove {profile.fullName} from the system? This will permanently delete their profile, trades, mistakes, and subscription data. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
             <AlertDialogCancel disabled={removeUser.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRemoveUser}
               disabled={removeUser.isPending}
-              className="bg-destructive hover:bg-destructive/90"
+              className="bg-red-600 hover:bg-red-700"
             >
               {removeUser.isPending ? 'Removing...' : 'Remove User'}
             </AlertDialogAction>

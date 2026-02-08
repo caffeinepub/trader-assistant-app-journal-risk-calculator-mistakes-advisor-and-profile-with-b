@@ -1,13 +1,32 @@
-<html lang='en'>
-    <head>
-        <meta charset='UTF-8' />
-        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
-        <link rel="icon" type="image/png" sizes="32x32" href="/assets/generated/favicon-yug.dim_32x32.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/assets/generated/apple-touch-icon-yug.dim_180x180.png" />
-        <title>Yug Trade Journal</title>
-    </head>
-    <body>
-        <div id='root'></div>
-        <script type='module' src='/src/main.tsx'></script>
-    </body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/assets/generated/favicon-yug.dim_32x32.png" />
+    <link rel="apple-touch-icon" href="/assets/generated/apple-touch-icon-yug.dim_180x180.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yug Trading Journal</title>
+    
+    <!-- Early theme initialization to prevent flash -->
+    <script>
+      (function() {
+        try {
+          const stored = localStorage.getItem('app-theme');
+          const theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+          document.documentElement.style.colorScheme = theme;
+        } catch (e) {
+          // Fallback to dark if localStorage fails
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = 'dark';
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

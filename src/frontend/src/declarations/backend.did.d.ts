@@ -17,6 +17,7 @@ export interface Discount {
   'percentage' : number,
   'validUntil' : Time,
 }
+export type ExternalBlob = Uint8Array;
 export type MistakeCategory = { 'tradeTiming' : null } |
   { 'positionSizing' : null } |
   { 'riskManagement' : null } |
@@ -34,6 +35,18 @@ export interface PaymentMethod {
   'name' : string,
   'description' : string,
   'enabled' : boolean,
+}
+export interface PendingPayment {
+  'couponCode' : [] | [string],
+  'finalAmount' : bigint,
+  'plan' : SubscriptionPlan,
+  'user' : Principal,
+  'submittedAt' : Time,
+  'fileSize' : bigint,
+  'fileType' : string,
+  'paymentProof' : Uint8Array,
+  'pointsRedeemed' : bigint,
+  'transactionId' : string,
 }
 export type SubscriptionPlan = { 'pro' : null } |
   { 'premium' : null } |
@@ -65,7 +78,33 @@ export interface UserProfile {
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface _CaffeineStorageCreateCertificateResult {
+  'method' : string,
+  'blob_hash' : string,
+}
+export interface _CaffeineStorageRefillInformation {
+  'proposed_top_up_amount' : [] | [bigint],
+}
+export interface _CaffeineStorageRefillResult {
+  'success' : [] | [boolean],
+  'topped_up_amount' : [] | [bigint],
+}
 export interface _SERVICE {
+  '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
+  '_caffeineStorageBlobsToDelete' : ActorMethod<[], Array<Uint8Array>>,
+  '_caffeineStorageConfirmBlobDeletion' : ActorMethod<
+    [Array<Uint8Array>],
+    undefined
+  >,
+  '_caffeineStorageCreateCertificate' : ActorMethod<
+    [string],
+    _CaffeineStorageCreateCertificateResult
+  >,
+  '_caffeineStorageRefillCashier' : ActorMethod<
+    [[] | [_CaffeineStorageRefillInformation]],
+    _CaffeineStorageRefillResult
+  >,
+  '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'adminActivateSubscription' : ActorMethod<
     [Principal, SubscriptionPlan],
@@ -76,9 +115,18 @@ export interface _SERVICE {
   'adminCreatePaymentMethod' : ActorMethod<[string, string], PaymentMethod>,
   'adminDeleteDiscount' : ActorMethod<[bigint], undefined>,
   'adminDeletePaymentMethod' : ActorMethod<[bigint], undefined>,
+  'adminDeletePaymentProof' : ActorMethod<[Principal], undefined>,
   'adminGetAllDiscounts' : ActorMethod<[], Array<Discount>>,
   'adminGetAllPaymentMethods' : ActorMethod<[], Array<PaymentMethod>>,
+  'adminGetPaymentProof' : ActorMethod<[Principal], [] | [Uint8Array]>,
+  'adminGetPendingPayments' : ActorMethod<
+    [],
+    Array<[Principal, PendingPayment]>
+  >,
+  'adminRejectPayment' : ActorMethod<[Principal, string], undefined>,
   'adminRemoveUser' : ActorMethod<[Principal], undefined>,
+  'adminReviewAndApprovePayment' : ActorMethod<[Principal], undefined>,
+  'adminSetUnlockPassword' : ActorMethod<[string], undefined>,
   'adminUpdateDiscount' : ActorMethod<
     [bigint, string, number, Time, boolean],
     undefined
@@ -89,6 +137,7 @@ export interface _SERVICE {
   >,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'cancelTrial' : ActorMethod<[], undefined>,
+  'clearPaymentQRCode' : ActorMethod<[], undefined>,
   'createMistakeEntry' : ActorMethod<
     [MistakeCategory, string, Time],
     MistakeEntry
@@ -142,15 +191,34 @@ export interface _SERVICE {
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getDailyProfitForDate' : ActorMethod<[Time], number>,
   'getEnabledPaymentMethods' : ActorMethod<[], Array<PaymentMethod>>,
+  'getPaymentQRCode' : ActorMethod<[], [] | [ExternalBlob]>,
   'getSubscriptionState' : ActorMethod<[], [] | [SubscriptionState]>,
   'getTradesByDateRange' : ActorMethod<[Time, Time], Array<TradeEntry>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'grantAdminRole' : ActorMethod<[Principal], undefined>,
+  'healthCheck' : ActorMethod<[], string>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'isLockedAdmin' : ActorMethod<[], boolean>,
   'isUserRegistered' : ActorMethod<[Principal], boolean>,
+  'revokeAdminRole' : ActorMethod<[Principal], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'selectSubscriptionPlan' : ActorMethod<[SubscriptionPlan], undefined>,
+  'submitPaymentForSubscription' : ActorMethod<
+    [
+      SubscriptionPlan,
+      [] | [string],
+      bigint,
+      bigint,
+      string,
+      string,
+      bigint,
+      Uint8Array,
+    ],
+    undefined
+  >,
+  'unlockAdmin' : ActorMethod<[string], boolean>,
   'updateMistakeEntry' : ActorMethod<[bigint, string], undefined>,
   'updateTradeEntry' : ActorMethod<[bigint, TradeEntry], undefined>,
+  'uploadPaymentQRCode' : ActorMethod<[ExternalBlob], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

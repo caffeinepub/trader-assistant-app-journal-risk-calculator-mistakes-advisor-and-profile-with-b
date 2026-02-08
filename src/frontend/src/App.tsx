@@ -3,13 +3,14 @@ import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useActorWithStatus } from './hooks/useActorWithStatus';
 import { useGetCallerUserProfile } from './hooks/useQueries';
 import { useEntitlement } from './hooks/useEntitlement';
-import { BookOpen, Calculator, AlertTriangle, User, RefreshCw, WifiOff, ServerCrash, ChevronDown, ChevronUp } from 'lucide-react';
+import { BookOpen, Calculator, AlertTriangle, User, RefreshCw, WifiOff, ServerCrash, ChevronDown, ChevronUp, Shield } from 'lucide-react';
 import LoginButton from './components/auth/LoginButton';
 import ProfileSetupDialog from './components/profile/ProfileSetupDialog';
 import JournalTab from './tabs/JournalTab';
 import RiskCalculatorTab from './tabs/RiskCalculatorTab';
 import MistakesTab from './tabs/MistakesTab';
 import ProfileTab from './tabs/ProfileTab';
+import AdminPanelTab from './tabs/AdminPanelTab';
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -17,7 +18,7 @@ import { APP_NAME, APP_TAGLINE, LOGO_PATH } from './lib/branding';
 import { classifyBackendError } from './lib/backendConnectionErrors';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-type TabType = 'journal' | 'calculator' | 'mistakes' | 'profile';
+type TabType = 'journal' | 'calculator' | 'mistakes' | 'profile' | 'admin';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('profile');
@@ -30,23 +31,24 @@ export default function App() {
   const isAuthenticated = !!identity;
   const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null && status === 'ready';
 
-  // Build tabs based on entitlement
+  // Build tabs based on entitlement - Admin Panel always visible when authenticated
   const allTabs = [
     { id: 'journal' as TabType, label: 'Journal', icon: BookOpen, enabled: entitlement.hasJournal },
     { id: 'calculator' as TabType, label: 'Calculator', icon: Calculator, enabled: entitlement.hasCalculator },
     { id: 'mistakes' as TabType, label: 'Mistakes', icon: AlertTriangle, enabled: entitlement.hasMistakes },
-    { id: 'profile' as TabType, label: 'Profile', icon: User, enabled: true }, // Profile always enabled
+    { id: 'profile' as TabType, label: 'Profile', icon: User, enabled: true },
+    { id: 'admin' as TabType, label: 'Admin Panel', icon: Shield, enabled: isAuthenticated },
   ];
 
   const tabs = allTabs.filter(tab => tab.enabled);
 
-  // Redirect to profile if current tab is not enabled and user is expired
+  // Redirect to profile if current tab is not enabled
   useEffect(() => {
     const currentTabEnabled = allTabs.find(tab => tab.id === activeTab)?.enabled;
     if (!currentTabEnabled) {
       setActiveTab('profile');
     }
-  }, [entitlement, activeTab]);
+  }, [entitlement, activeTab, isAuthenticated]);
 
   // Show connecting state
   if (isConnecting) {
@@ -87,9 +89,9 @@ export default function App() {
               </p>
             </div>
             <div className="flex items-center justify-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </div>
         </main>
@@ -150,28 +152,33 @@ export default function App() {
                 )}
 
                 {/* Error details collapsible */}
-                {!errorClassification.showRawError && (
-                  <Collapsible open={showErrorDetails} onOpenChange={setShowErrorDetails}>
-                    <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mt-2">
-                      {showErrorDetails ? (
-                        <>
-                          <ChevronUp className="w-3 h-3" />
-                          Hide technical details
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown className="w-3 h-3" />
-                          Show technical details
-                        </>
-                      )}
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="mt-2">
-                      <div className="p-2 bg-background/50 rounded text-xs font-mono break-all">
-                        {error.message}
+                <Collapsible open={showErrorDetails} onOpenChange={setShowErrorDetails}>
+                  <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mt-2">
+                    {showErrorDetails ? (
+                      <>
+                        <ChevronUp className="w-3 h-3" />
+                        Hide technical details
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-3 h-3" />
+                        Show technical details
+                      </>
+                    )}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2 space-y-2">
+                    <div className="p-2 bg-background/50 rounded text-xs font-mono break-all">
+                      <div className="font-semibold mb-1">Error:</div>
+                      {error.message}
+                    </div>
+                    {errorClassification.diagnostics && (
+                      <div className="p-2 bg-background/50 rounded text-xs font-mono break-all whitespace-pre-wrap">
+                        <div className="font-semibold mb-1">Backend Diagnostics:</div>
+                        {errorClassification.diagnostics}
                       </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
               </AlertDescription>
             </Alert>
 
@@ -188,7 +195,7 @@ export default function App() {
               <Button 
                 onClick={retry} 
                 disabled={isConnecting || nextRetryIn !== null}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50"
                 size="lg"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${nextRetryIn !== null ? 'animate-spin' : ''}`} />
@@ -210,10 +217,14 @@ export default function App() {
     );
   }
 
+  // Show main app
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Toaster />
       
+      {/* Profile Setup Dialog */}
+      {showProfileSetup && <ProfileSetupDialog />}
+
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -232,85 +243,11 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 pb-20 md:pb-24">
-        {!isAuthenticated ? (
-          <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[60vh]">
-            <div className="max-w-md text-center space-y-6">
-              <img 
-                src={LOGO_PATH} 
-                alt={`${APP_NAME} logo`}
-                className="w-20 h-20 mx-auto object-contain"
-              />
-              <h2 className="text-3xl font-bold">Welcome to {APP_NAME}</h2>
-              <p className="text-muted-foreground text-lg">
-                Your professional trading companion. Track trades, manage risk, learn from mistakes, and improve your trading performance.
-              </p>
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-blue-600">
-                  🎉 Get 2 days free trial with all features!
-                </p>
-                <LoginButton />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            {activeTab === 'journal' && entitlement.hasJournal && <JournalTab />}
-            {activeTab === 'calculator' && entitlement.hasCalculator && <RiskCalculatorTab />}
-            {activeTab === 'mistakes' && entitlement.hasMistakes && <MistakesTab />}
-            {activeTab === 'profile' && <ProfileTab />}
-            
-            {/* Show upgrade message if trying to access disabled tab or expired */}
-            {entitlement.isExpired && activeTab !== 'profile' && (
-              <div className="container mx-auto px-4 py-16 text-center space-y-4">
-                <Alert variant="destructive" className="max-w-2xl mx-auto">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Trial Expired</AlertTitle>
-                  <AlertDescription>
-                    Your 2-day free trial has expired. Please select a plan in the Profile tab to continue using the app.
-                  </AlertDescription>
-                </Alert>
-                <Button onClick={() => setActiveTab('profile')} className="bg-blue-600 hover:bg-blue-700">
-                  Go to Profile & Select Plan
-                </Button>
-              </div>
-            )}
-            {activeTab === 'calculator' && !entitlement.hasCalculator && !entitlement.isExpired && (
-              <div className="container mx-auto px-4 py-16 text-center space-y-4">
-                <Alert className="max-w-2xl mx-auto">
-                  <AlertTitle>Upgrade Required</AlertTitle>
-                  <AlertDescription>
-                    The Calculator feature is available in Pro (₹799) and Premium (₹999) plans. Please upgrade your subscription to access this feature.
-                  </AlertDescription>
-                </Alert>
-                <Button onClick={() => setActiveTab('profile')} className="bg-blue-600 hover:bg-blue-700">
-                  View Plans
-                </Button>
-              </div>
-            )}
-            {activeTab === 'mistakes' && !entitlement.hasMistakes && !entitlement.isExpired && (
-              <div className="container mx-auto px-4 py-16 text-center space-y-4">
-                <Alert className="max-w-2xl mx-auto">
-                  <AlertTitle>Upgrade Required</AlertTitle>
-                  <AlertDescription>
-                    The Mistakes Tracker is available in the Premium plan (₹999). Please upgrade your subscription to access this feature.
-                  </AlertDescription>
-                </Alert>
-                <Button onClick={() => setActiveTab('profile')} className="bg-blue-600 hover:bg-blue-700">
-                  View Plans
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-      </main>
-
-      {/* Bottom Navigation */}
+      {/* Navigation Tabs */}
       {isAuthenticated && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-          <div className="container mx-auto px-2">
-            <div className="flex items-center justify-around">
+        <nav className="border-b border-border bg-card/30 backdrop-blur-sm sticky top-[73px] z-30">
+          <div className="container mx-auto px-4">
+            <div className="flex gap-1 overflow-x-auto">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -318,14 +255,17 @@ export default function App() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex-1 flex flex-col items-center gap-1 py-3 px-2 transition-colors ${
-                      isActive
-                        ? 'text-blue-500'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
+                    className={`
+                      flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap
+                      border-b-2 -mb-px
+                      ${isActive 
+                        ? 'border-primary text-primary' 
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                      }
+                    `}
                   >
-                    <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : ''}`} />
-                    <span className="text-xs font-medium">{tab.label}</span>
+                    <Icon className="w-4 h-4" />
+                    {tab.label}
                   </button>
                 );
               })}
@@ -334,8 +274,53 @@ export default function App() {
         </nav>
       )}
 
-      {/* Profile Setup Dialog */}
-      {showProfileSetup && <ProfileSetupDialog />}
+      {/* Main Content */}
+      <main className="flex-1">
+        {!isAuthenticated ? (
+          <div className="container mx-auto px-4 py-16 text-center space-y-6">
+            <img 
+              src={LOGO_PATH} 
+              alt={`${APP_NAME} logo`}
+              className="w-24 h-24 mx-auto object-contain"
+            />
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold">{APP_NAME}</h2>
+              <p className="text-xl text-muted-foreground">{APP_TAGLINE}</p>
+            </div>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Please log in to access your trading journal, risk calculator, and mistake tracking features.
+            </p>
+            <div className="pt-4">
+              <LoginButton />
+            </div>
+          </div>
+        ) : (
+          <>
+            {activeTab === 'journal' && <JournalTab />}
+            {activeTab === 'calculator' && <RiskCalculatorTab />}
+            {activeTab === 'mistakes' && <MistakesTab />}
+            {activeTab === 'profile' && <ProfileTab />}
+            {activeTab === 'admin' && <AdminPanelTab />}
+          </>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-card/30 backdrop-blur-sm py-6 mt-auto">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <p>
+            © 2026. Built with ❤️ using{' '}
+            <a 
+              href="https://caffeine.ai" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              caffeine.ai
+            </a>
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

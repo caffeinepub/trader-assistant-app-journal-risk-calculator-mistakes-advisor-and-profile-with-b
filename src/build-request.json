@@ -1,96 +1,83 @@
 {
   "kind": "build_request",
-  "title": "Restrict Admin Panel to Single Admin Account and Remove Admin Password Prompt",
+  "title": "Add light/dark theme toggle in Profile section",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Restrict Admin Panel visibility so it is not shown to any user unless they are logged in as the admin account identified by the email \"yug553496@gmail.com\" (Option B: no extra admin password screen).",
+      "text": "Add a Light/Dark theme option in the Profile tab UI that lets the user switch the app theme between light and dark.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-3"
         ],
         "quotes": [
-          "Pls remove admin panel from everyone it show only when Login from yug553496@gmail.com mail it and in admin panel no password required",
-          "B"
+          "Add option of light theme and dark theme in profile section"
         ]
       },
       "acceptanceCriteria": [
-        "When logged in as any non-admin user, the UI does not show any Admin Panel entry points (buttons/links/routes/sections).",
-        "When logged in as the admin account (\"yug553496@gmail.com\"), the Admin Panel entry point is visible and navigates directly to the Admin Panel without prompting for an admin password."
+        "Profile tab contains an \"Appearance\" (or equivalent) section with controls to select Light or Dark theme.",
+        "Switching the setting immediately updates the UI colors (background/foreground/cards) using the existing Tailwind/CSS variable theme setup.",
+        "All user-facing labels for this section are in English (e.g., \"Appearance\", \"Theme\", \"Light\", \"Dark\")."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Remove the admin password verification flow from the Admin Panel access path so that admin access is granted solely by being authenticated as the admin account; update all user-facing copy to match (no references to entering an admin password).",
+      "text": "Persist the selected theme on the client and restore it on app load, so the user’s choice remains after refresh/reopen.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-3"
         ],
         "quotes": [
-          "in admin panel no password required",
-          "B"
+          "Add option of light theme and dark theme in profile section"
         ]
       },
       "acceptanceCriteria": [
-        "AdminAccessDialog (or any equivalent password prompt) is not required to enter Admin Panel.",
-        "There is no hardcoded admin password check remaining in the admin access flow.",
-        "All user-facing text is in English and does not instruct the user to enter an admin password to access Admin Panel."
+        "Theme selection is saved in browser storage (e.g., localStorage).",
+        "On page load, the app reads the stored theme and applies it before/when rendering so the chosen theme is consistently applied.",
+        "If no stored preference exists, default behavior is clearly defined and consistent (e.g., keep current default dark, but still user-changeable)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Enforce server-side admin authorization for all admin operations and all admin-only data access, ensuring non-admin callers cannot access admin queries or mutations even if they manipulate the frontend.",
-      "target": "backend",
+      "text": "Remove the current runtime enforcement of dark mode so that selecting Light theme is not overridden, and ensure native browser UI color-scheme follows the selected theme.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-3"
         ],
         "quotes": [
-          "remove admin panel from everyone"
+          "Add option of light theme and dark theme in profile section"
         ]
       },
       "acceptanceCriteria": [
-        "All admin-only backend methods trap or reject when called by non-admin principals.",
-        "Admin-only data queries (e.g., fetching all user data) remain inaccessible to non-admin users regardless of frontend changes."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Ensure Admin Panel supports these admin actions for individual users: activate a subscription plan for a specific user; add/manage payment methods/payment options; create/manage discount options; and kick out a specific user.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-user-1"
-        ],
-        "quotes": [
-          "that activate subscription plan  for individual person only done by admin and for admin also give add payment methods or payment options and discounts option and kick out any person"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Admin can select a specific user and activate a subscription plan for that user only (does not affect other users).",
-        "Admin can add/update/remove payment methods/payment options visible in the app where applicable.",
-        "Admin can create/update/remove discount options and apply them where applicable.",
-        "Admin can trigger a 'kick out' action for a specific user, and the kicked user is forced out of the app session on their next interaction (e.g., they see an access/session-ended state and must log in again).",
-        "All these actions are rejected by the backend for non-admin callers."
+        "The app no longer unconditionally forces the `dark` class on `document.documentElement` at runtime.",
+        "When switching themes, `document.documentElement` has the `dark` class only when Dark theme is selected (and removed when Light is selected).",
+        "The document `color-scheme` style is updated to match the selected theme (\"dark\" for dark theme, \"light\" for light theme)."
       ]
     }
   ],
   "constraints": [
-    "Use English for any user-facing text.",
-    "Do not edit files under frontend/src/components/ui (compose instead).",
-    "Do not edit immutable frontend hook entrypoints listed in SYSTEM_CONTEXT (compose alternatives if needed).",
-    "Backend must remain a single Motoko actor in backend/main.mo; create backend/migration.mo updates only if state schema changes require it."
+    "Do not edit files under frontend/src/components/ui (Shadcn components are read-only and must be composed).",
+    "Do not edit immutable hook/bootstrapping paths listed in SYSTEM_CONTEXT (e.g., frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx)."
   ],
   "nonGoals": [
-    "Adding third-party authentication providers (only Internet Identity is supported).",
-    "Adding real-time features (WebSockets/push notifications).",
-    "Implementing external database storage beyond canister state."
+    "Do not add backend storage for theme preferences (client-side persistence only).",
+    "Do not implement additional themes beyond Light and Dark."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

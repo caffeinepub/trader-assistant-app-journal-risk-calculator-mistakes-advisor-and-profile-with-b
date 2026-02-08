@@ -1,88 +1,66 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T02:46:18.595Z",
+  "generatedAt": "2026-02-08T09:06:52.121Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
+    "total": 3,
     "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Restrict Admin Panel visibility so it is not shown to any user unless they are logged in as the admin account identified by the email \"yug553496@gmail.com\" (Option B: no extra admin password screen).",
+        "summary": "Add a Light/Dark theme option in the Profile tab UI that lets the user switch the app theme between light and dark.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/tabs/ProfileTab.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/hooks/useTheme.ts"
         ],
         "matchedFiles": [
           "frontend/src/tabs/ProfileTab.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/hooks/useTheme.ts"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Remove the admin password verification flow from the Admin Panel access path so that admin access is granted solely by being authenticated as the admin account; update all user-facing copy to match (no references to entering an admin password).",
+        "summary": "Persist the selected theme on the client and restore it on app load, so the user’s choice remains after refresh/reopen.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/admin/AdminAccessDialog.tsx",
-          "frontend/src/tabs/ProfileTab.tsx",
-          "frontend/src/components/admin/AdminPanel.tsx"
+          "frontend/src/hooks/useTheme.ts",
+          "frontend/index.html"
         ],
         "matchedFiles": [
-          "frontend/src/components/admin/AdminAccessDialog.tsx",
-          "frontend/src/tabs/ProfileTab.tsx",
-          "frontend/src/components/admin/AdminPanel.tsx"
+          "frontend/src/hooks/useTheme.ts",
+          "frontend/index.html"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Enforce server-side admin authorization for all admin operations and all admin-only data access, ensuring non-admin callers cannot access admin queries or mutations even if they manipulate the frontend.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Ensure Admin Panel supports these admin actions for individual users: activate a subscription plan for a specific user; add/manage payment methods/payment options; create/manage discount options; and kick out a specific user.",
+        "summary": "Remove the current runtime enforcement of dark mode so that selecting Light theme is not overridden, and ensure native browser UI color-scheme follows the selected theme.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/admin/AdminUserDetailDialog.tsx",
-          "frontend/src/components/admin/AdminPanel.tsx",
-          "frontend/src/components/admin/AdminPaymentMethodsDialog.tsx",
-          "frontend/src/components/admin/AdminDiscountsDialog.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useTheme.ts",
+          "frontend/index.html"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/admin/AdminUserDetailDialog.tsx",
-          "frontend/src/components/admin/AdminPanel.tsx",
-          "frontend/src/components/admin/AdminPaymentMethodsDialog.tsx",
-          "frontend/src/components/admin/AdminDiscountsDialog.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useTheme.ts",
+          "frontend/index.html"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/admin/AdminAccessDialog.tsx",
-    "frontend/src/components/admin/AdminDiscountsDialog.tsx",
-    "frontend/src/components/admin/AdminPanel.tsx",
-    "frontend/src/components/admin/AdminPaymentMethodsDialog.tsx",
-    "frontend/src/components/admin/AdminUserDetailDialog.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useQueries.ts",
+    "frontend/index.html",
+    "frontend/src/App.tsx",
+    "frontend/src/hooks/useTheme.ts",
     "frontend/src/tabs/ProfileTab.tsx",
     "project_state.json",
     "scratch/component-selection.json",

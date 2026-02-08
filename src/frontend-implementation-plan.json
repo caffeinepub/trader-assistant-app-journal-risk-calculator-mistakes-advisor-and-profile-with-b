@@ -1,89 +1,73 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Admin panel gating by single admin account and removal of admin password prompt",
+  "title": "Light/Dark theme toggle in Profile with client persistence",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Hide all Admin Panel entry points unless the logged-in account matches the admin email (no separate admin password screen).",
+      "summary": "Add an Appearance section in the Profile tab to let users switch between Light and Dark themes.",
       "acceptanceCriteria": [
-        "When logged in as any non-admin user, the UI does not show any Admin Panel entry points (buttons/links/routes/sections).",
-        "When logged in as the admin account (\"yug553496@gmail.com\"), the Admin Panel entry point is visible and navigates directly to the Admin Panel without prompting for an admin password."
+        "Profile tab contains an \"Appearance\" (or equivalent) section with controls to select Light or Dark theme.",
+        "Switching the setting immediately updates the UI colors (background/foreground/cards) using the existing Tailwind/CSS variable theme setup.",
+        "All user-facing labels for this section are in English (e.g., \"Appearance\", \"Theme\", \"Light\", \"Dark\")."
       ],
       "file_operations": [
         {
           "path": "frontend/src/tabs/ProfileTab.tsx",
           "operation": "modify",
-          "description": "Gate the Admin section visibility and navigation by checking the authenticated user's identity against the single admin account (\"yug553496@gmail.com\"). Replace the current click-to-open AdminAccessDialog flow with direct navigation to the Admin Panel only when the user is the admin. Ensure all user-facing text remains in English."
+          "description": "Add an \"Appearance\" section (within existing Profile layout) with Light/Dark selection controls wired to a shared theme state setter. Use existing shadcn/ui composed components (e.g., Card, Button, Label/Input patterns) to match current UI. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add a small, composable query hook to fetch admin status from the backend (e.g., using existing backend capability isCallerAdmin/getCallerUserRole) and expose a simple boolean used by ProfileTab to hide/show Admin entry points. Use the selected \"authorization\" component capabilities via backend-provided role checks in the UI logic (verify the component's usage instructions before implementing)."
+          "path": "frontend/src/hooks/useTheme.ts",
+          "operation": "create",
+          "description": "Create a small theme hook that exposes the current theme and a setter (e.g., 'light' | 'dark') so Profile can update theme consistently across the app, applying changes by toggling the document root class to integrate with the existing Tailwind 'dark' + CSS variables setup."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Remove the admin password verification UI/logic and update copy so Admin Panel access is based only on being authenticated as the admin account.",
+      "summary": "Persist the selected theme in browser storage and restore/apply it on app load.",
       "acceptanceCriteria": [
-        "AdminAccessDialog (or any equivalent password prompt) is not required to enter Admin Panel.",
-        "There is no hardcoded admin password check remaining in the admin access flow.",
-        "All user-facing text is in English and does not instruct the user to enter an admin password to access Admin Panel."
+        "Theme selection is saved in browser storage (e.g., localStorage).",
+        "On page load, the app reads the stored theme and applies it before/when rendering so the chosen theme is consistently applied.",
+        "If no stored preference exists, default behavior is clearly defined and consistent (e.g., keep current default dark, but still user-changeable)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/admin/AdminAccessDialog.tsx",
-          "operation": "delete",
-          "description": "Remove the admin password dialog component entirely (including the hardcoded password check) so it cannot be used by any flow."
+          "path": "frontend/src/hooks/useTheme.ts",
+          "operation": "modify",
+          "description": "Implement localStorage persistence for theme selection (read initial value, write on change) and define a consistent default when no preference exists (keep current default behavior as dark unless otherwise detected/decided)."
         },
         {
-          "path": "frontend/src/tabs/ProfileTab.tsx",
+          "path": "frontend/index.html",
           "operation": "modify",
-          "description": "Remove all imports/state/handlers referencing AdminAccessDialog and any admin-password-related copy. Ensure the Admin Panel is entered directly for the admin account only, and no UI text references an admin password."
-        },
-        {
-          "path": "frontend/src/components/admin/AdminPanel.tsx",
-          "operation": "modify",
-          "description": "Update unauthorized/error-state copy to remove any suggestion of verifying a password/credentials; show a clear English message indicating the user is not authorized to access admin data."
+          "description": "Add a small early-load script in the document head to read the saved theme from localStorage and apply/remove the 'dark' class on the <html> element before React renders, to prevent theme flash and ensure the stored preference takes effect immediately."
         }
       ]
     },
     {
-      "id": "REQ-4",
-      "summary": "Ensure the Admin Panel UI supports admin actions: activate subscription for an individual user, manage payment methods, manage discounts, and kick out a specific user.",
+      "id": "REQ-3",
+      "summary": "Remove unconditional runtime dark-mode enforcement and ensure document color-scheme follows the selected theme.",
       "acceptanceCriteria": [
-        "Admin can select a specific user and activate a subscription plan for that user only (does not affect other users).",
-        "Admin can add/update/remove payment methods/payment options visible in the app where applicable.",
-        "Admin can create/update/remove discount options and apply them where applicable.",
-        "Admin can trigger a 'kick out' action for a specific user, and the kicked user is forced out of the app session on their next interaction (e.g., they see an access/session-ended state and must log in again).",
-        "All these actions are rejected by the backend for non-admin callers."
+        "The app no longer unconditionally forces the `dark` class on `document.documentElement` at runtime.",
+        "When switching themes, `document.documentElement` has the `dark` class only when Dark theme is selected (and removed when Light is selected).",
+        "The document `color-scheme` style is updated to match the selected theme (\"dark\" for dark theme, \"light\" for light theme)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Add React Query mutations and queries for the existing backend admin capabilities needed by the Admin Panel UI: activate/cancel subscription for a selected user, create/update/delete/list payment methods, create/update/delete/list discounts, and remove/kick a user. Ensure admin-related failures are handled gracefully with English toast/error messages. Use the selected \"authorization\" component capabilities via backend-provided role checks in the UI logic (verify the component's usage instructions before implementing)."
+          "description": "Remove the current effect that unconditionally adds the 'dark' class and sets colorScheme to dark; instead, rely on the centralized theme hook to apply the class based on user selection."
         },
         {
-          "path": "frontend/src/components/admin/AdminUserDetailDialog.tsx",
+          "path": "frontend/src/hooks/useTheme.ts",
           "operation": "modify",
-          "description": "Extend the user detail modal to include admin controls for (1) activating/canceling a subscription plan for this specific user and (2) kicking/removing this specific user. Wire the controls to the new hooks in useQueries.ts, and show confirmation prompts and success/error feedback in English."
+          "description": "Ensure the theme application logic updates both (1) presence/absence of the 'dark' class on document.documentElement and (2) document.documentElement.style.colorScheme to 'dark' or 'light' in sync with the selected theme."
         },
         {
-          "path": "frontend/src/components/admin/AdminPanel.tsx",
+          "path": "frontend/index.html",
           "operation": "modify",
-          "description": "Add Admin Panel UI entry points (e.g., header buttons or section cards) to open dialogs for managing Payment Methods and Discounts. Keep these controls visible only within the Admin Panel view (which is already gated by REQ-1), and wire them to the new management dialogs."
-        },
-        {
-          "path": "frontend/src/components/admin/AdminPaymentMethodsDialog.tsx",
-          "operation": "create",
-          "description": "Create an admin-only dialog for listing and managing payment methods (add/update/remove/enable/disable) using existing shadcn/ui dialog/form primitives (compose only; do not edit frontend/src/components/ui). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/admin/AdminDiscountsDialog.tsx",
-          "operation": "create",
-          "description": "Create an admin-only dialog for listing and managing discounts (create/update/remove/enable/disable and validity) using existing shadcn/ui dialog/form primitives (compose only; do not edit frontend/src/components/ui). Verify the component's usage instructions before implementing."
+          "description": "Remove the hardcoded default 'dark' class from the <html> tag (if present) so the selected theme (or defined default) is applied via the early theme bootstrap script and not overridden by static markup."
         }
       ]
     }

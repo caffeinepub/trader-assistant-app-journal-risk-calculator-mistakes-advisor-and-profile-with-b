@@ -4,12 +4,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { type backendInterface } from '../backend';
 import { createActorWithConfig } from '../config';
 import { getSecretParameter } from '../utils/urlParams';
-import { isStoppedCanisterError } from '../lib/backendConnectionErrors';
+import { isStoppedCanisterError, isHealthCheckError } from '../lib/backendConnectionErrors';
 
-const ACTOR_INITIALIZATION_TIMEOUT = 20000; // 20 seconds
+const ACTOR_INITIALIZATION_TIMEOUT = 30000; // 30 seconds (increased from 20)
 const INITIAL_RETRY_DELAY = 3000; // 3 seconds
 const MAX_RETRY_DELAY = 15000; // 15 seconds
-const MAX_AUTO_RETRIES = 5;
+const MAX_AUTO_RETRIES = 8; // Increased from 5
 
 type ActorStatus = 'idle' | 'connecting' | 'ready' | 'error';
 
@@ -41,6 +41,7 @@ export function useActorWithStatus() {
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isRetryingRef = useRef(false);
+  const currentRetryCountRef = useRef(0);
 
   const clearRetryTimers = useCallback(() => {
     if (retryTimeoutRef.current) {
@@ -62,22 +63,28 @@ export function useActorWithStatus() {
       MAX_RETRY_DELAY
     );
     
+    const delaySeconds = Math.ceil(delay / 1000);
+    
     setState((prev) => ({
       ...prev,
-      nextRetryIn: Math.ceil(delay / 1000),
+      nextRetryIn: delaySeconds,
     }));
 
     // Update countdown every second
+    let remainingSeconds = delaySeconds;
     countdownIntervalRef.current = setInterval(() => {
-      setState((prev) => {
-        if (prev.nextRetryIn === null || prev.nextRetryIn <= 1) {
-          return prev;
+      remainingSeconds -= 1;
+      if (remainingSeconds <= 0) {
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
         }
-        return {
-          ...prev,
-          nextRetryIn: prev.nextRetryIn - 1,
-        };
-      });
+        return;
+      }
+      setState((prev) => ({
+        ...prev,
+        nextRetryIn: remainingSeconds,
+      }));
     }, 1000);
 
     // Schedule the actual retry
@@ -97,6 +104,9 @@ export function useActorWithStatus() {
     isRetryingRef.current = true;
     clearRetryTimers();
 
+    const newRetryCount = isAutoRetry ? currentRetryCountRef.current + 1 : 0;
+    currentRetryCountRef.current = newRetryCount;
+
     setState((prev) => ({
       ...prev,
       status: 'connecting',
@@ -105,7 +115,7 @@ export function useActorWithStatus() {
       hasError: false,
       error: null,
       nextRetryIn: null,
-      retryCount: isAutoRetry ? prev.retryCount + 1 : 0,
+      retryCount: newRetryCount,
     }));
 
     try {
@@ -113,7 +123,17 @@ export function useActorWithStatus() {
         const isAuthenticated = !!identity;
 
         if (!isAuthenticated) {
-          return await createActorWithConfig();
+          const actor = await createActorWithConfig();
+          
+          // Health check first
+          try {
+            await actor.healthCheck();
+          } catch (healthError) {
+            const healthMsg = healthError instanceof Error ? healthError.message : String(healthError);
+            throw new Error(`Health check failed: ${healthMsg}`);
+          }
+          
+          return actor;
         }
 
         const actorOptions = {
@@ -123,12 +143,21 @@ export function useActorWithStatus() {
         };
 
         const actor = await createActorWithConfig(actorOptions);
+        
+        // Health check first
+        try {
+          await actor.healthCheck();
+        } catch (healthError) {
+          const healthMsg = healthError instanceof Error ? healthError.message : String(healthError);
+          throw new Error(`Health check failed: ${healthMsg}`);
+        }
+        
+        // Then initialize access control
         const adminToken = getSecretParameter('caffeineAdminToken') || '';
         
         try {
           await actor._initializeAccessControlWithSecret(adminToken);
         } catch (initError) {
-          // Classify access control initialization errors
           const errorMsg = initError instanceof Error ? initError.message : String(initError);
           if (errorMsg.includes('stopping') || errorMsg.includes('access') || errorMsg.includes('initialization')) {
             throw new Error('Backend is initializing access control. Please refresh the page in a few seconds.');
@@ -141,7 +170,7 @@ export function useActorWithStatus() {
 
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
-          reject(new Error('Backend connection timed out after 20 seconds. The backend may be starting up or experiencing issues. Try refreshing the page.'));
+          reject(new Error('Backend connection timed out after 30 seconds. The backend may be starting up or experiencing issues. Try refreshing the page.'));
         }, ACTOR_INITIALIZATION_TIMEOUT);
       });
 
@@ -158,36 +187,40 @@ export function useActorWithStatus() {
         nextRetryIn: null,
       });
 
+      currentRetryCountRef.current = 0;
       isRetryingRef.current = false;
 
       // Invalidate all queries when actor is ready
       queryClient.invalidateQueries();
     } catch (error) {
       const errorMessage = error instanceof Error ? error : new Error('Failed to connect to backend');
-      const currentRetryCount = state.retryCount + (isAutoRetry ? 1 : 0);
       
-      setState({
+      setState((prev) => ({
+        ...prev,
         actor: null,
         status: 'error',
         error: errorMessage,
         isConnecting: false,
         isReady: false,
         hasError: true,
-        retryCount: currentRetryCount,
         nextRetryIn: null,
-      });
+      }));
 
       isRetryingRef.current = false;
 
-      // Auto-retry for stopped canister errors
-      if (isStoppedCanisterError(errorMessage) && currentRetryCount < MAX_AUTO_RETRIES) {
-        scheduleAutoRetry(currentRetryCount);
+      // Auto-retry for stopped canister or health check errors
+      const shouldAutoRetry = (isStoppedCanisterError(errorMessage) || isHealthCheckError(errorMessage)) 
+        && currentRetryCountRef.current < MAX_AUTO_RETRIES;
+      
+      if (shouldAutoRetry) {
+        scheduleAutoRetry(currentRetryCountRef.current);
       }
     }
-  }, [identity, queryClient, clearRetryTimers, scheduleAutoRetry, state.retryCount]);
+  }, [identity, queryClient, clearRetryTimers, scheduleAutoRetry]);
 
   const retry = useCallback(() => {
     if (!isRetryingRef.current) {
+      currentRetryCountRef.current = 0;
       initializeActor(false);
     }
   }, [initializeActor]);

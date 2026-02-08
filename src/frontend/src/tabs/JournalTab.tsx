@@ -10,7 +10,7 @@ import { BookOpen, Calendar as CalendarIcon } from 'lucide-react';
 
 export default function JournalTab() {
   const { data: trades = [], isLoading } = useGetAllTrades();
-  const { data: analytics } = useGetAnalytics();
+  const { data: analytics } = useGetAnalytics(null, null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   // Clear selection if the selected date no longer has trades or is outside current view

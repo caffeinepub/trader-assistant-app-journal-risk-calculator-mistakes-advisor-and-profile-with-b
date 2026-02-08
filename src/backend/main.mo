@@ -1,20 +1,37 @@
+import Runtime "mo:core/Runtime";
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Time "mo:core/Time";
-import Runtime "mo:core/Runtime";
-import Principal "mo:core/Principal";
-import Iter "mo:core/Iter";
-import Float "mo:core/Float";
-import Nat "mo:core/Nat";
 import Text "mo:core/Text";
+import Nat "mo:core/Nat";
+import Iter "mo:core/Iter";
+import Principal "mo:core/Principal";
+import Float "mo:core/Float";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import Migration "migration";
+import Storage "blob-storage/Storage";
+import MixinStorage "blob-storage/Mixin";
 
-(with migration = Migration.run)
+
+
 actor {
+  include MixinStorage();
+
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+
+  public query func healthCheck() : async Text {
+    "trader-journal-backend-v0.1.0";
+  };
+
+  type LockedAdmins = Map.Map<Principal, Time.Time>;
+
+  let lockedAdmins = Map.empty<Principal, Time.Time>();
+
+  // Store the admin unlock password (in production, this should be set during deployment)
+  // For security, this should be a hashed value, but for simplicity we use plain text
+  // In a real system, use proper password hashing
+  stable var adminUnlockPassword : Text = "YugArorA@12";
 
   public type SubscriptionPlan = {
     #basic;
@@ -83,16 +100,69 @@ actor {
     enabled : Bool;
   };
 
+  type PendingPayment = {
+    user : Principal;
+    plan : SubscriptionPlan;
+    couponCode : ?Text;
+    pointsRedeemed : Nat;
+    finalAmount : Nat;
+    transactionId : Text;
+    fileType : Text;
+    fileSize : Nat;
+    paymentProof : [Nat8];
+    submittedAt : Time.Time;
+  };
+
   let userProfiles = Map.empty<Principal, UserProfile>();
   let tradeEntries = Map.empty<Principal, List.List<TradeEntry>>();
   let mistakeEntries = Map.empty<Principal, List.List<MistakeEntry>>();
   let subscriptions = Map.empty<Principal, SubscriptionState>();
   let paymentMethods = Map.empty<Nat, PaymentMethod>();
   let discounts = Map.empty<Nat, Discount>();
+  let pendingPayments = Map.empty<Principal, PendingPayment>();
 
   var nextUserId = 1;
   var nextPaymentMethodId = 1;
   var nextDiscountId = 1;
+
+  var paymentQRCode : ?Storage.ExternalBlob = null;
+
+  public shared ({ caller }) func uploadPaymentQRCode(blob : Storage.ExternalBlob) : async () {
+    if (not isAuthorizedAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only admins can upload the payment QR code");
+    };
+    paymentQRCode := ?blob;
+  };
+
+  public shared ({ caller }) func clearPaymentQRCode() : async () {
+    if (not isAuthorizedAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only admins can clear the payment QR code");
+    };
+    paymentQRCode := null;
+  };
+
+  public query ({ caller }) func getPaymentQRCode() : async ?Storage.ExternalBlob {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view the payment QR code");
+    };
+    paymentQRCode;
+  };
+
+  // Helper function to check if caller is authorized as admin (permanent or temporary)
+  func isAuthorizedAdmin(caller : Principal) : Bool {
+    // Check permanent admin role
+    if (AccessControl.isAdmin(accessControlState, caller)) {
+      return true;
+    };
+
+    // Check temporary unlock
+    switch (lockedAdmins.get(caller)) {
+      case (?expireTime) {
+        Time.now() < expireTime;
+      };
+      case (null) { false };
+    };
+  };
 
   // Helper function to check subscription status
   func getSubscriptionStatus(caller : Principal) : {
@@ -158,17 +228,32 @@ actor {
     };
   };
 
-  // ============ ADMIN FUNCTIONS ============
+  // Admin role management - uses AccessControl.assignRole which has built-in admin check
+  public shared ({ caller }) func grantAdminRole(target : Principal) : async () {
+    if (not isAuthorizedAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only admins can grant admin roles");
+    };
+    // AccessControl.assignRole already includes admin-only guard
+    AccessControl.assignRole(accessControlState, caller, target, #admin);
+  };
+
+  public shared ({ caller }) func revokeAdminRole(target : Principal) : async () {
+    if (not isAuthorizedAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only admins can revoke admin roles");
+    };
+    // AccessControl.assignRole already includes admin-only guard
+    AccessControl.assignRole(accessControlState, caller, target, #user);
+  };
 
   public query ({ caller }) func getAllUsersWithIds() : async [(Principal, UserProfile)] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can fetch all users");
     };
     userProfiles.toArray();
   };
 
   public query ({ caller }) func findUserById(targetId : Nat) : async ?(Principal, UserProfile) {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can search users by ID");
     };
 
@@ -181,7 +266,7 @@ actor {
   };
 
   public query ({ caller }) func isUserRegistered(user : Principal) : async Bool {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can check user registration status");
     };
 
@@ -192,7 +277,7 @@ actor {
   };
 
   public query ({ caller }) func getAllUserData() : async [(Principal, UserProfile, [TradeEntry], [MistakeEntry], ?SubscriptionState)] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can view all user data");
     };
 
@@ -230,7 +315,7 @@ actor {
 
   // Admin: Activate subscription plan for a specific user
   public shared ({ caller }) func adminActivateSubscription(user : Principal, plan : SubscriptionPlan) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can activate subscriptions for users");
     };
 
@@ -256,7 +341,7 @@ actor {
 
   // Admin: Cancel/deactivate subscription for a specific user
   public shared ({ caller }) func adminCancelSubscription(user : Principal) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can cancel subscriptions for users");
     };
 
@@ -278,7 +363,7 @@ actor {
 
   // Admin: Kick out/remove a specific user
   public shared ({ caller }) func adminRemoveUser(user : Principal) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can remove users");
     };
 
@@ -297,7 +382,7 @@ actor {
 
   // Admin: Create payment method
   public shared ({ caller }) func adminCreatePaymentMethod(name : Text, description : Text) : async PaymentMethod {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can create payment methods");
     };
 
@@ -314,7 +399,7 @@ actor {
 
   // Admin: Update payment method
   public shared ({ caller }) func adminUpdatePaymentMethod(id : Nat, name : Text, description : Text, enabled : Bool) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can update payment methods");
     };
 
@@ -336,7 +421,7 @@ actor {
 
   // Admin: Delete payment method
   public shared ({ caller }) func adminDeletePaymentMethod(id : Nat) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can delete payment methods");
     };
 
@@ -352,7 +437,7 @@ actor {
 
   // Admin: Get all payment methods
   public query ({ caller }) func adminGetAllPaymentMethods() : async [PaymentMethod] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can view all payment methods");
     };
 
@@ -361,7 +446,7 @@ actor {
 
   // Admin: Create discount
   public shared ({ caller }) func adminCreateDiscount(code : Text, percentage : Float, validUntil : Time.Time) : async Discount {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can create discounts");
     };
 
@@ -379,7 +464,7 @@ actor {
 
   // Admin: Update discount
   public shared ({ caller }) func adminUpdateDiscount(id : Nat, code : Text, percentage : Float, validUntil : Time.Time, enabled : Bool) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can update discounts");
     };
 
@@ -402,7 +487,7 @@ actor {
 
   // Admin: Delete discount
   public shared ({ caller }) func adminDeleteDiscount(id : Nat) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can delete discounts");
     };
 
@@ -418,7 +503,7 @@ actor {
 
   // Admin: Get all discounts
   public query ({ caller }) func adminGetAllDiscounts() : async [Discount] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Only admins can view all discounts");
     };
 
@@ -435,7 +520,7 @@ actor {
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+    if (caller != user and not isAuthorizedAdmin(caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile or admin access required");
     };
     userProfiles.get(user);
@@ -980,41 +1065,122 @@ actor {
     subscriptions.get(caller);
   };
 
-  public shared ({ caller }) func selectSubscriptionPlan(plan : SubscriptionPlan) : async () {
+  public shared ({ caller }) func submitPaymentForSubscription(
+    plan : SubscriptionPlan,
+    couponCode : ?Text,
+    pointsRedeemed : Nat,
+    finalAmount : Nat,
+    transactionId : Text,
+    fileType : Text,
+    fileSize : Nat,
+    paymentProof : [Nat8]
+  ) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can select subscription plans");
+      Runtime.trap("Unauthorized: Only users can submit payments");
     };
 
+    // Validate that payment file is PDF and less than 8MB (size is checked in frontend)
+    if (not fileType.contains(#text "pdf")) {
+      Runtime.trap("File must be a PDF");
+    };
+
+    if (fileSize > 8_000_000) {
+      Runtime.trap("File size must be less than 8MB");
+    };
+
+    // Validate if user already has a subscription record
     switch (subscriptions.get(caller)) {
       case (null) {
-        Runtime.trap("User does not have a subscription. Please create a profile first");
+        Runtime.trap("No subscription record found for user. Please create a profile first.");
       };
-      case (?currentSubscription) {
-        let now = Time.now();
-        let trialActive = currentSubscription.trialActive and (now - currentSubscription.trialStart < (172_800_000_000_000 : Time.Time));
-
-        if (trialActive) {
-          Runtime.trap("Cannot purchase a plan while trial is active. Please wait for trial to expire or cancel the trial");
-        };
-
-        // Check if user already has an active paid plan
-        switch (currentSubscription.paidStart) {
-          case (?paidStart) {
-            if (now - paidStart < (2_678_400_000_000_000 : Time.Time)) {
-              Runtime.trap("You already have an active paid subscription");
-            };
+      case (?subscription) {
+        // Check if payment proof already exists for user
+        switch (pendingPayments.get(caller)) {
+          case (?_existingPayment) {
+            Runtime.trap("You already have a pending payment. Please wait for admin approval before submitting a new one");
           };
-          case (null) {};
+          case (null) {
+            // Save new payment submission in backend
+            let pendingPayment : PendingPayment = {
+              user = caller;
+              plan;
+              couponCode;
+              pointsRedeemed;
+              finalAmount;
+              transactionId;
+              fileType;
+              fileSize;
+              paymentProof;
+              submittedAt = Time.now();
+            };
+            pendingPayments.add(caller, pendingPayment);
+          };
         };
-
-        let newSubscription : SubscriptionState = {
-          plan = ?plan;
-          trialStart = currentSubscription.trialStart;
-          paidStart = ?Time.now();
-          trialActive = false;
-        };
-        subscriptions.add(caller, newSubscription);
       };
+    };
+  };
+
+  public shared ({ caller }) func adminReviewAndApprovePayment(user : Principal) : async () {
+    if (not isAuthorizedAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only admins can review and approve payments");
+    };
+
+    switch (pendingPayments.get(user)) {
+      case (null) {
+        Runtime.trap("No pending payment found for the user");
+      };
+      case (?payment) {
+        // Activate subscription without extension.
+        let currentSub = subscriptions.get(user);
+        switch (currentSub) {
+          case (null) {
+            Runtime.trap("No existing subscription found for user. Please create a subscription record before activating a paid plan.");
+          };
+          case (?sub) {
+            let newSubscription : SubscriptionState = {
+              plan = ?payment.plan;
+              trialStart = sub.trialStart;
+              paidStart = ?Time.now(); // Set new paid subscription, always 31 days each
+              trialActive = false;
+            };
+            subscriptions.add(user, newSubscription);
+            // Remove payment proof after successful activation
+            pendingPayments.remove(user);
+          };
+        };
+      };
+    };
+  };
+
+  public shared ({ caller }) func adminRejectPayment(user : Principal, reason : Text) : async () {
+    if (not isAuthorizedAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only admins can reject payments");
+    };
+
+    switch (pendingPayments.get(user)) {
+      case (null) { Runtime.trap("No pending payment found for the user") };
+      case (?_payment) {
+        pendingPayments.remove(user);
+      };
+    };
+  };
+
+  public query ({ caller }) func adminGetPendingPayments() : async [(Principal, PendingPayment)] {
+    if (not isAuthorizedAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only admins can view pending payments");
+    };
+
+    pendingPayments.toArray();
+  };
+
+  public query ({ caller }) func adminGetPaymentProof(user : Principal) : async ?[Nat8] {
+    if (not isAuthorizedAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only admins can retrieve payment proofs");
+    };
+
+    switch (pendingPayments.get(user)) {
+      case (null) { null };
+      case (?payment) { ?payment.paymentProof };
     };
   };
 
@@ -1029,17 +1195,31 @@ actor {
       };
       case (?sub) {
         if (sub.trialActive and (Time.now() - sub.trialStart < (172_800_000_000_000 : Time.Time))) {
-          // If trial is still within 2 days, allow cancelation
           let updatedSub : SubscriptionState = {
             plan = sub.plan;
             trialStart = sub.trialStart;
             paidStart = sub.paidStart;
-            trialActive = false; // Mark trial as inactive regardless of time left
+            trialActive = false;
           };
           subscriptions.add(caller, updatedSub);
         } else {
           Runtime.trap("Cannot cancel inactive or expired trial");
         };
+      };
+    };
+  };
+
+  public shared ({ caller }) func adminDeletePaymentProof(user : Principal) : async () {
+    if (not isAuthorizedAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only admins can delete payment proofs");
+    };
+
+    switch (pendingPayments.get(user)) {
+      case (null) {
+        Runtime.trap("No payment proof found for the user");
+      };
+      case (?_) {
+        pendingPayments.remove(user);
       };
     };
   };
@@ -1076,12 +1256,10 @@ actor {
     };
   };
 
-  // Public query for enabled payment methods (no auth required for viewing available options)
   public query func getEnabledPaymentMethods() : async [PaymentMethod] {
     paymentMethods.values().toArray().filter(func(method : PaymentMethod) : Bool { method.enabled });
   };
 
-  // Public query for active discounts (no auth required for viewing available discounts)
   public query func getActiveDiscounts() : async [Discount] {
     let now = Time.now();
     discounts.values().toArray().filter(
@@ -1090,4 +1268,47 @@ actor {
       }
     );
   };
+
+  public query ({ caller }) func isLockedAdmin() : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can check admin lock status");
+    };
+
+    switch (lockedAdmins.get(caller)) {
+      case (?expireTime) {
+        Time.now() < expireTime;
+      };
+      case (null) { false };
+    };
+  };
+
+  public shared ({ caller }) func unlockAdmin(password : Text) : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can unlock admin access");
+    };
+
+    // Validate password
+    if (password != adminUnlockPassword) {
+      Runtime.trap("Invalid password");
+    };
+
+    // Grant temporary admin access for 5 minutes
+    let expireTime = Time.now() + (5 * 60 * 1_000_000_000);
+    lockedAdmins.add(caller, expireTime);
+    true;
+  };
+
+  // Admin function to update the unlock password
+  public shared ({ caller }) func adminSetUnlockPassword(newPassword : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only permanent admins can change the unlock password");
+    };
+
+    if (newPassword.size() < 8) {
+      Runtime.trap("Password must be at least 8 characters long");
+    };
+
+    adminUnlockPassword := newPassword;
+  };
 };
+
