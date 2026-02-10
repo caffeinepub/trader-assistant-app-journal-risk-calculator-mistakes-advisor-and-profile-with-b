@@ -1,75 +1,78 @@
-import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Download, CheckCircle, XCircle } from 'lucide-react';
+import { FileText, CheckCircle, XCircle } from 'lucide-react';
 import {
   useAdminGetPendingPayments,
-  useAdminReviewAndApprovePayment,
+  useAdminApprovePayment,
   useAdminRejectPayment,
 } from '../../hooks/useQueries';
 import { SubscriptionPlan } from '../../backend';
+import { Principal } from '@icp-sdk/core/principal';
+import { toast } from 'sonner';
 
 interface AdminPaymentsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+const PLAN_NAMES: Record<SubscriptionPlan, string> = {
+  [SubscriptionPlan.basic]: 'Basic',
+  [SubscriptionPlan.pro]: 'Pro',
+  [SubscriptionPlan.premium]: 'Premium',
+};
+
 export default function AdminPaymentsDialog({ open, onOpenChange }: AdminPaymentsDialogProps) {
   const { data: pendingPayments, isLoading } = useAdminGetPendingPayments();
-  const approvePayment = useAdminReviewAndApprovePayment();
+  const approvePayment = useAdminApprovePayment();
   const rejectPayment = useAdminRejectPayment();
 
-  const [rejectingUser, setRejectingUser] = useState<string | null>(null);
-
-  const getPlanLabel = (plan: SubscriptionPlan) => {
-    switch (plan) {
-      case SubscriptionPlan.basic:
-        return 'Basic (₹299)';
-      case SubscriptionPlan.pro:
-        return 'Pro (₹799)';
-      case SubscriptionPlan.premium:
-        return 'Premium (₹999)';
-      default:
-        return 'Unknown';
+  const handleApprove = async (userPrincipal: Principal) => {
+    try {
+      await approvePayment.mutateAsync(userPrincipal);
+      toast.success('Payment approved successfully');
+    } catch (error: any) {
+      console.error('Approve payment error:', error);
+      toast.error(error.message || 'Failed to approve payment');
     }
   };
 
-  const handleApprove = async (userPrincipal: string) => {
-    if (confirm('Are you sure you want to approve this payment and activate the subscription?')) {
-      try {
-        const principal = { __principal__: userPrincipal } as any;
-        await approvePayment.mutateAsync(principal);
-      } catch (error) {
-        console.error('Failed to approve payment:', error);
-      }
-    }
-  };
-
-  const handleReject = async (userPrincipal: string) => {
+  const handleReject = async (userPrincipal: Principal) => {
     const reason = prompt('Enter rejection reason (optional):');
-    if (reason !== null) {
-      try {
-        const principal = { __principal__: userPrincipal } as any;
-        await rejectPayment.mutateAsync({ user: principal, reason: reason || 'No reason provided' });
-        setRejectingUser(null);
-      } catch (error) {
-        console.error('Failed to reject payment:', error);
-      }
+    if (reason === null) return;
+
+    try {
+      await rejectPayment.mutateAsync({ user: userPrincipal, reason: reason || 'No reason provided' });
+      toast.success('Payment rejected');
+    } catch (error: any) {
+      console.error('Reject payment error:', error);
+      toast.error(error.message || 'Failed to reject payment');
     }
   };
 
-  const handleDownloadProof = (paymentProof: Uint8Array, transactionId: string) => {
-    const blob = new Blob([paymentProof as any], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `payment-proof-${transactionId}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleViewProof = (payment: any) => {
+    try {
+      const uint8Array = new Uint8Array(payment.paymentProof);
+      const blob = new Blob([uint8Array], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    } catch (error) {
+      console.error('Error viewing proof:', error);
+      toast.error('Failed to open payment proof');
+    }
+  };
+
+  const formatDate = (timestamp: bigint) => {
+    const date = new Date(Number(timestamp) / 1_000_000);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   return (
@@ -77,93 +80,103 @@ export default function AdminPaymentsDialog({ open, onOpenChange }: AdminPayment
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-primary" />
-            Pending Payments
+            <FileText className="w-5 h-5 text-primary" />
+            Pending Payment Approvals
           </DialogTitle>
           <DialogDescription className="break-words">
-            View pending payment submissions, download payment proofs, approve or reject user subscriptions
+            Review and approve or reject user payment submissions
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-muted-foreground mt-4">Loading pending payments...</p>
-            </div>
+            <p className="text-sm text-muted-foreground">Loading pending payments...</p>
           ) : pendingPayments && pendingPayments.length > 0 ? (
-            <div className="space-y-4">
-              {pendingPayments.map(([principal, payment]) => {
-                const submittedDate = new Date(Number(payment.submittedAt) / 1_000_000);
-                
-                return (
-                  <Card key={principal.toString()}>
-                    <CardContent className="pt-6 space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                        <div className="space-y-2 min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline" className="shrink-0">{getPlanLabel(payment.plan)}</Badge>
-                            <span className="text-sm text-muted-foreground">
-                              ₹{Number(payment.finalAmount)}
-                            </span>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm">
-                              <span className="font-medium">Transaction ID:</span>{' '}
-                              <span className="break-all">{payment.transactionId}</span>
-                            </p>
-                            <p className="text-sm">
-                              <span className="font-medium">User:</span>{' '}
-                              <span className="break-all font-mono text-xs">{principal.toString()}</span>
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Submitted: {submittedDate.toLocaleString()}
-                            </p>
-                            {payment.couponCode && (
-                              <p className="text-sm">
-                                <span className="font-medium">Coupon:</span> {payment.couponCode}
-                              </p>
-                            )}
-                          </div>
+            pendingPayments.map(([principal, payment]) => (
+              <Card key={principal.toString()}>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="space-y-4">
+                    {/* Payment Info */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-xs text-muted-foreground">User Principal</p>
+                          <p className="text-sm font-mono break-all">{principal.toString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Plan</p>
+                          <Badge variant="outline">{PLAN_NAMES[payment.plan]}</Badge>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Amount</p>
+                          <p className="text-sm font-semibold">₹{Number(payment.finalAmount)}</p>
                         </div>
                       </div>
-
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Button
-                          onClick={() => handleDownloadProof(payment.paymentProof, payment.transactionId)}
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Download Proof
-                        </Button>
-                        <Button
-                          onClick={() => handleApprove(principal.toString())}
-                          disabled={approvePayment.isPending}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          {approvePayment.isPending ? 'Approving...' : 'Approve'}
-                        </Button>
-                        <Button
-                          onClick={() => handleReject(principal.toString())}
-                          disabled={rejectPayment.isPending}
-                          variant="destructive"
-                          className="flex-1"
-                        >
-                          <XCircle className="w-4 h-4 mr-2" />
-                          {rejectPayment.isPending ? 'Rejecting...' : 'Reject'}
-                        </Button>
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Transaction ID</p>
+                          <p className="text-sm font-mono break-all">{payment.transactionId}</p>
+                        </div>
+                        {payment.couponCode && (
+                          <div>
+                            <p className="text-xs text-muted-foreground">Coupon Code</p>
+                            <p className="text-sm font-mono break-all">{payment.couponCode}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-xs text-muted-foreground">Submitted</p>
+                          <p className="text-sm">{formatDate(payment.submittedAt)}</p>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewProof(payment);
+                        }}
+                        className="flex-1"
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        View Proof
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleApprove(principal);
+                        }}
+                        disabled={approvePayment.isPending}
+                        className="flex-1 bg-primary hover:bg-primary/90"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Approve
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReject(principal);
+                        }}
+                        disabled={rejectPayment.isPending}
+                        className="flex-1"
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
           ) : (
             <div className="text-center py-12">
-              <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No pending payments</p>
+              <p className="text-muted-foreground">No pending payments to review</p>
             </div>
           )}
         </div>

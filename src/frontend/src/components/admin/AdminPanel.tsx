@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGetAllUserData } from '../../hooks/useQueries';
+import { useAdminGetAllUserData } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, CreditCard, Tag, QrCode, Key } from 'lucide-react';
@@ -30,7 +30,7 @@ export default function AdminPanel() {
     subscriptionState: SubscriptionState | null;
   } | null>(null);
 
-  const { data: allUserData, isLoading } = useGetAllUserData();
+  const { data: allUserData, isLoading } = useAdminGetAllUserData();
 
   const handleUserClick = (
     principal: Principal,
@@ -46,6 +46,12 @@ export default function AdminPanel() {
     setSelectedUser(null);
   };
 
+  const handleCardClick = (e: React.MouseEvent, action: () => void) => {
+    e.stopPropagation();
+    e.preventDefault();
+    action();
+  };
+
   if (currentView === 'landing') {
     return (
       <div className="container mx-auto px-4 py-8 space-y-6 max-w-4xl">
@@ -57,7 +63,10 @@ export default function AdminPanel() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('users')}>
+          <Card 
+            className="hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={(e) => handleCardClick(e, () => setCurrentView('users'))}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Users className="w-5 h-5 shrink-0 text-primary" />
@@ -73,7 +82,10 @@ export default function AdminPanel() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowPaymentsDialog(true)}>
+          <Card 
+            className="hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={(e) => handleCardClick(e, () => setShowPaymentsDialog(true))}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <CreditCard className="w-5 h-5 shrink-0 text-primary" />
@@ -85,7 +97,10 @@ export default function AdminPanel() {
             </CardHeader>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowPaymentMethodsDialog(true)}>
+          <Card 
+            className="hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={(e) => handleCardClick(e, () => setShowPaymentMethodsDialog(true))}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <CreditCard className="w-5 h-5 shrink-0 text-primary" />
@@ -97,7 +112,10 @@ export default function AdminPanel() {
             </CardHeader>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowDiscountsDialog(true)}>
+          <Card 
+            className="hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={(e) => handleCardClick(e, () => setShowDiscountsDialog(true))}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Tag className="w-5 h-5 shrink-0 text-primary" />
@@ -109,7 +127,10 @@ export default function AdminPanel() {
             </CardHeader>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowQRCodeDialog(true)}>
+          <Card 
+            className="hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={(e) => handleCardClick(e, () => setShowQRCodeDialog(true))}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <QrCode className="w-5 h-5 shrink-0 text-primary" />
@@ -121,7 +142,10 @@ export default function AdminPanel() {
             </CardHeader>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowRotatePasswordDialog(true)}>
+          <Card 
+            className="hover:shadow-lg transition-shadow cursor-pointer" 
+            onClick={(e) => handleCardClick(e, () => setShowRotatePasswordDialog(true))}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Key className="w-5 h-5 shrink-0 text-primary" />

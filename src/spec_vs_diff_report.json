@@ -1,61 +1,79 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T09:06:52.118Z",
-  "summary": "Theme toggle functionality (hook + persistence + early apply in index.html) appears implemented, and Profile tab was updated to use it. However, the diff includes many unrelated UI/feature changes (admin diagnostics, styling changes across multiple tabs/components, risk calculator logic, etc.) that were not requested.",
-  "missing_requirements": [],
-  "hallucinated_features": [
+  "generatedAt": "2026-02-10T16:27:47.825Z",
+  "summary": "Diff implements a new gold/charcoal Tailwind theme, adds global Radix z-index/scroll safeguards to reduce menu overlap, updates branding to point to new generated logo/icon filenames, and makes notable backend and frontend behavior changes. However, the required logo/icon image files are not shown as added, and several UI areas still appear to use blue-accent styling per the provided file summaries. The backend diff also introduces new subscription/payment/admin-related functionality that is outside the stated non-goals.",
+  "missing_requirements": [
     {
-      "description": "Broad UI restyling / blue-accent design changes across multiple tabs and components unrelated to theme toggle",
-      "reason": "BuildRequest only asks for light/dark theme toggle in Profile and persistence/runtime behavior; it does not request visual restyling in other areas.",
+      "id": "REQ-4",
+      "requirement": "Add a new logo image under `frontend/public/assets/generated/` and ensure header + connecting/initializing states display the new logo asset.",
+      "reason": "Branding was updated to reference `/assets/generated/app-logo-yug-v2.dim_1024x1024.png`, and App.tsx references `LOGO_PATH`, but the diff shows no new static asset files added under `frontend/public/assets/generated/` (\"Added: 0\"). Without the actual image present, production builds would likely 404.",
       "evidence": [
-        "frontend-file-summaries.txt (JournalTab, RiskCalculatorTab, MistakesTab, multiple journal/mistakes components described as updated with blue accents)"
-      ]
-    },
-    {
-      "description": "Admin panel visibility/entitlement-based tab logic changes (including Admin Panel always visible when authenticated) and additional backend connection error handling changes",
-      "reason": "Not requested by any REQ-1/2/3; scope is theme toggle + persistence + removing forced dark mode.",
-      "evidence": [
+        "frontend/src/lib/branding.ts",
         "frontend/src/App.tsx",
-        "frontend-file-summaries.txt (App.tsx description)"
+        "File diff summary: \"Added: 0\" (no assets added)"
       ]
     },
     {
-      "description": "New permanent-admin checking hook/logic and profile admin diagnostics",
-      "reason": "Not part of requested theme functionality.",
+      "id": "REQ-5",
+      "requirement": "Add the newly generated logo image(s) as static assets in `frontend/public/assets/generated` with the specified filenames and reference them directly.",
+      "reason": "The diff references the expected filenames in `branding.ts` and `index.html`, but no files were added anywhere (\"Added: 0\"), so the required generated images are not evidenced as present.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/hooks/useQueries.ts: new useIsPermanentAdmin hook; frontend/src/tabs/ProfileTab.tsx: admin access diagnostics)"
+        "frontend/src/lib/branding.ts",
+        "frontend/index.html",
+        "File diff summary: \"Added: 0\" (no assets added)"
       ]
     },
     {
-      "description": "Risk calculator behavioral changes (lot size units conversion; pip-value behavior for XAUUSD/XAGUSD/OTHER)",
-      "reason": "Not requested; outside theme toggle scope.",
+      "id": "REQ-3",
+      "requirement": "Apply a cohesive refreshed gold/charcoal theme consistently across header, tabs, forms, tables, dialogs, and admin screens (avoid default blue/purple styling).",
+      "reason": "A gold/charcoal theme was added in `index.css`, but the provided per-file summaries explicitly mention multiple components still using \"blue accent\" styling (e.g., LoginButton, ProfileSetupDialog, TradeEntryForm, ProfitCalendar, MistakeList cards). That suggests the theme is not applied consistently and still retains default blue styling in places.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/lib/riskCalculator.ts, frontend/src/lib/pipValues.ts, frontend/src/tabs/RiskCalculatorTab.tsx)"
-      ]
-    },
-    {
-      "description": "Profile setup dialog messaging changes (e.g., 2-day free trial messaging, app name updates)",
-      "reason": "Not requested; outside theme toggle scope.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/profile/ProfileSetupDialog.tsx)"
-      ]
-    },
-    {
-      "description": "Global CSS and Tailwind config changes beyond what is necessary to add a toggle (OKLCH color system, mobile dialog overlay improvements, etc.)",
-      "reason": "BuildRequest does not ask to refactor global styling system; it only requires using existing Tailwind/CSS variable theme setup.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/index.css, frontend/tailwind.config.js)"
+        "frontend/src/index.css",
+        "frontend-file-summaries.txt (LoginButton: \"blue accent styling\"; ProfileSetupDialog: \"blue-accented submit button\"; TradeEntryForm: \"blue-accented\"; ProfitCalendar: \"blue selection ring\"; MistakeList: \"blue-accented cards\")"
       ]
     }
   ],
-  "confidence": 0.72,
+  "hallucinated_features": [
+    {
+      "description": "Introduced subscription plans/state, payment methods/discounts, pending payments, and payment QR code upload/clear endpoints in the backend.",
+      "reason": "BuildRequest explicitly lists as non-goals adding new product features beyond UI overlap fixes and UI/logo refresh (including \"new subscription plans\" and \"new payment providers\"). The backend changes add subscription/payment constructs and admin-controlled payment QR management, which are not requested for the overlap/theme/logo work.",
+      "evidence": [
+        "backend/main.mo (types: SubscriptionPlan/SubscriptionState, PaymentMethod, Discount, PendingPayment; functions: uploadPaymentQRCode, clearPaymentQRCode, ensureHasUserAndGetPaymentQRCode, ensureHasUserAndGetSubscriptionState)"
+      ]
+    },
+    {
+      "description": "Added an admin unlock password stored as a stable variable in backend code.",
+      "reason": "Not requested by any REQ and expands admin/security behavior beyond the stated UI/logo scope.",
+      "evidence": [
+        "backend/main.mo (\"stable var adminUnlockPassword : Text = ...\")"
+      ]
+    },
+    {
+      "description": "Added runtime env loader in `frontend/index.html` that fetches `/env.json` and dynamically injects the main TS entry script.",
+      "reason": "Not requested by the BuildRequest requirements; this is an architectural/runtime loading change beyond the UI overlap/theme/logo update scope (even if it may help resilience).",
+      "evidence": [
+        "frontend/index.html (script fetching `/env.json` and appending `/src/main.tsx` dynamically)"
+      ]
+    },
+    {
+      "description": "Added Google Fonts (Montserrat) external dependency loaded from fonts.googleapis.com.",
+      "reason": "Not explicitly requested; BuildRequest only asked for a refreshed theme inspired by the logo, not introducing external font loading.",
+      "evidence": [
+        "frontend/index.html (Google Fonts Montserrat link tags)"
+      ]
+    }
+  ],
+  "confidence": 0.74,
   "changed_files": [
+    "backend/main.mo",
     "frontend-file-summaries.txt",
     "frontend/index.html",
     "frontend/src/App.tsx",
-    "frontend/src/hooks/useTheme.ts",
-    "frontend/src/tabs/ProfileTab.tsx",
+    "frontend/src/components/navigation/BottomNav.tsx",
+    "frontend/src/index.css",
+    "frontend/src/lib/branding.ts",
+    "frontend/tailwind.config.js",
     "project_state.json"
   ]
 }

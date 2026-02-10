@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { QrCode, Upload, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { useGetPaymentQRCode, useUploadPaymentQRCode, useClearPaymentQRCode } from '../../hooks/useQueries';
+import { useGetPaymentQRCode, useAdminUploadPaymentQRCode, useAdminClearPaymentQRCode } from '../../hooks/useQueries';
 import { ExternalBlob } from '../../backend';
 import { safeErrorMessage } from '../../lib/safeErrorMessage';
 
@@ -16,8 +16,8 @@ interface AdminPaymentQRCodeDialogProps {
 
 export default function AdminPaymentQRCodeDialog({ open, onOpenChange }: AdminPaymentQRCodeDialogProps) {
   const { data: currentQRCode, refetch } = useGetPaymentQRCode();
-  const uploadQRCode = useUploadPaymentQRCode();
-  const clearQRCode = useClearPaymentQRCode();
+  const uploadQRCode = useAdminUploadPaymentQRCode();
+  const clearQRCode = useAdminClearPaymentQRCode();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -215,50 +215,49 @@ export default function AdminPaymentQRCodeDialog({ open, onOpenChange }: AdminPa
               {uploadProgress > 0 && uploadProgress < 100 && (
                 <div className="space-y-2">
                   <Progress value={uploadProgress} className="w-full" />
-                  <p className="text-xs text-center text-muted-foreground leading-relaxed">
+                  <p className="text-xs text-center text-muted-foreground">
                     Uploading... {uploadProgress}%
                   </p>
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                {!selectedFile ? (
-                  <label className="flex-1">
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/jpg"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      disabled={uploadQRCode.isPending}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      disabled={uploadQRCode.isPending}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        (e.currentTarget.previousElementSibling as HTMLInputElement)?.click();
-                      }}
-                    >
-                      <Upload className="w-4 h-4 mr-2 shrink-0" />
-                      Select Image
-                    </Button>
-                  </label>
-                ) : (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <label className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    disabled={uploadQRCode.isPending}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={uploadQRCode.isPending}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      (e.currentTarget.previousElementSibling as HTMLInputElement)?.click();
+                    }}
+                  >
+                    <Upload className="w-4 h-4 mr-2 shrink-0" />
+                    Select Image
+                  </Button>
+                </label>
+
+                {selectedFile && (
                   <>
                     <Button
                       onClick={handleUpload}
                       disabled={uploadQRCode.isPending || uploadProgress > 0}
-                      className="flex-1 bg-primary hover:bg-primary/90"
+                      className="flex-1"
                     >
-                      <Upload className="w-4 h-4 mr-2 shrink-0" />
                       {uploadQRCode.isPending ? 'Uploading...' : 'Upload'}
                     </Button>
                     <Button
                       onClick={handleCancel}
+                      disabled={uploadQRCode.isPending}
                       variant="outline"
-                      disabled={uploadQRCode.isPending || uploadProgress > 0}
                       className="flex-1"
                     >
                       Cancel

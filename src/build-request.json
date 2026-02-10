@@ -1,73 +1,115 @@
 {
   "kind": "build_request",
-  "title": "Add light/dark theme toggle in Profile section",
+  "title": "Rebuild app; fix overlapping option menus; refresh UI and update logo",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add a Light/Dark theme option in the Profile tab UI that lets the user switch the app theme between light and dark.",
-      "target": "frontend",
+      "text": "Rebuild the application and ensure it deploys successfully (no build/runtime errors) after the previous draft expiry/generation failure.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-3"
+          "msg-1",
+          "msg-2"
         ],
         "quotes": [
-          "Add option of light theme and dark theme in profile section"
+          "Pls build it again",
+          "Your draft app has expired. Do you want to rebuild it?"
         ]
       },
       "acceptanceCriteria": [
-        "Profile tab contains an \"Appearance\" (or equivalent) section with controls to select Light or Dark theme.",
-        "Switching the setting immediately updates the UI colors (background/foreground/cards) using the existing Tailwind/CSS variable theme setup.",
-        "All user-facing labels for this section are in English (e.g., \"Appearance\", \"Theme\", \"Light\", \"Dark\")."
+        "`dfx deploy` (or the platform build) completes successfully for both frontend and backend.",
+        "The app loads to the main shell without a blank screen or fatal console errors."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Persist the selected theme on the client and restore it on app load, so the user’s choice remains after refresh/reopen.",
+      "text": "Fix the UI overlap/visibility issue when opening options/menus so that popovers, dropdowns, and other option panels are always fully visible and not covered by fixed UI (e.g., bottom navigation) on mobile and desktop.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-3"
         ],
         "quotes": [
-          "Add option of light theme and dark theme in profile section"
+          "In this when I open any other option it not clearly visible it's over lapping"
         ]
       },
       "acceptanceCriteria": [
-        "Theme selection is saved in browser storage (e.g., localStorage).",
-        "On page load, the app reads the stored theme and applies it before/when rendering so the chosen theme is consistently applied.",
-        "If no stored preference exists, default behavior is clearly defined and consistent (e.g., keep current default dark, but still user-changeable)."
+        "Opening any options menu (e.g., dropdowns/popovers within tabs and dialogs) renders above fixed elements and remains readable.",
+        "Menus are not clipped by parent containers (no hidden content due to `overflow: hidden` on ancestors).",
+        "On small screens, option panels reposition or scroll as needed so all actions are accessible without overlap."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Remove the current runtime enforcement of dark mode so that selecting Light theme is not overridden, and ensure native browser UI color-scheme follows the selected theme.",
+      "text": "Update the app UI with a cohesive refreshed visual theme (colors, typography, spacing, surfaces) and apply it consistently across the header, tabs, forms, tables, dialogs, and admin screens. Use a distinct gold/charcoal theme inspired by the provided logo screenshot (avoid default blue/purple styling).",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-3"
         ],
         "quotes": [
-          "Add option of light theme and dark theme in profile section"
+          "And also change ui and logo"
         ]
       },
       "acceptanceCriteria": [
-        "The app no longer unconditionally forces the `dark` class on `document.documentElement` at runtime.",
-        "When switching themes, `document.documentElement` has the `dark` class only when Dark theme is selected (and removed when Light is selected).",
-        "The document `color-scheme` style is updated to match the selected theme (\"dark\" for dark theme, \"light\" for light theme)."
+        "Primary/secondary colors, background, borders, and typography are updated consistently across all tabs (Journal, Calculator, Mistakes, Profile, Admin).",
+        "Updated theme preserves accessibility (text contrast remains readable in light and dark mode if supported).",
+        "No new UI regressions: layouts remain responsive, and key screens (forms, lists, dialogs) remain usable on mobile widths."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Replace/update the application logo using the uploaded image as the visual reference. Update the app branding so the header and loading/connecting states display the new logo asset.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-3"
+        ],
+        "quotes": [
+          "And also change ui and logo"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A new logo image is added under `frontend/public/assets/generated/` and referenced by `frontend/src/lib/branding.ts` (`LOGO_PATH`).",
+        "Header logo and all existing logo placements (e.g., connecting/initializing/error screens in `frontend/src/App.tsx`) render the new asset without stretching or pixelation.",
+        "Logo loads correctly in production build (no 404)."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Add the newly generated logo image(s) as static assets in `frontend/public/assets/generated` and ensure the UI references them directly (do not proxy images through the backend).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-3"
+        ],
+        "quotes": [
+          "change ui and logo"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Generated image files exist at `frontend/public/assets/generated/*` with the specified filenames.",
+        "`LOGO_PATH` points to a file within `/assets/generated/` and renders correctly at runtime."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (Shadcn components are read-only and must be composed).",
-    "Do not edit immutable hook/bootstrapping paths listed in SYSTEM_CONTEXT (e.g., frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx)."
+    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
+    "Do not modify files under `frontend/src/components/ui` (compose existing UI components instead).",
+    "Do not edit immutable hook entrypoints: `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useInternetIdentity.tsx`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`.",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Do not add backend storage for theme preferences (client-side persistence only).",
-    "Do not implement additional themes beyond Light and Dark."
+    "Adding new product features beyond fixing overlap issues and updating UI/logo (e.g., new tabs, new subscription plans, new payment providers).",
+    "Integrating third-party authentication providers (only Internet Identity is allowed).",
+    "Adding external databases or non-Internet-Computer backend services."
   ],
   "imageRequirements": {
-    "required": [],
+    "required": [
+      "Square app logo based on the uploaded gold/black trading mark and text (app-logo-yug-v2.dim_1024x1024.png)",
+      "Square app icon variant derived from the same mark, simplified for small sizes (app-icon-yug-v2.dim_512x512.png)"
+    ],
     "edits": []
   },
   "userProfileUpdate": {

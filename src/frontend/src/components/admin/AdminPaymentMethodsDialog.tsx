@@ -138,100 +138,82 @@ export default function AdminPaymentMethodsDialog({ open, onOpenChange }: AdminP
                   />
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  {isCreating ? (
-                    <>
-                      <Button
-                        onClick={handleCreate}
-                        disabled={createPaymentMethod.isPending || !name || !description}
-                        className="flex-1 bg-primary hover:bg-primary/90"
-                      >
-                        {createPaymentMethod.isPending ? 'Creating...' : 'Create Payment Method'}
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setIsCreating(false);
-                          setName('');
-                          setDescription('');
-                        }}
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        Cancel
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        onClick={() => editingId && handleUpdate(editingId)}
-                        disabled={updatePaymentMethod.isPending || !name || !description}
-                        className="flex-1 bg-primary hover:bg-primary/90"
-                      >
-                        {updatePaymentMethod.isPending ? 'Saving...' : 'Save Changes'}
-                      </Button>
-                      <Button onClick={cancelEdit} variant="outline" className="flex-1">
-                        Cancel
-                      </Button>
-                    </>
-                  )}
+                  <Button
+                    onClick={() => (editingId !== null ? handleUpdate(editingId) : handleCreate())}
+                    disabled={!name || !description || createPaymentMethod.isPending || updatePaymentMethod.isPending}
+                    className="flex-1"
+                  >
+                    {editingId !== null ? 'Update' : 'Create'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (isCreating) setIsCreating(false);
+                      if (editingId !== null) cancelEdit();
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Existing Payment Methods */}
+          {/* Payment Methods List */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold">Existing Payment Methods</h3>
             {isLoading ? (
-              <div className="text-center py-8">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-              </div>
+              <p className="text-sm text-muted-foreground">Loading payment methods...</p>
             ) : paymentMethods && paymentMethods.length > 0 ? (
-              <div className="space-y-3">
-                {paymentMethods.map((method) => (
-                  <Card key={method.id.toString()}>
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                        <div className="space-y-1 min-w-0 flex-1">
-                          <p className="font-semibold text-lg break-words">{method.name}</p>
-                          <p className="text-sm text-muted-foreground break-words">{method.description}</p>
-                        </div>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
+              paymentMethods.map((method) => (
+                <Card key={Number(method.id)}>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                          <h3 className="font-semibold break-words">{method.name}</h3>
                           <div className="flex items-center gap-2">
-                            <Label htmlFor={`enabled-${method.id}`} className="text-sm">
-                              {method.enabled ? 'Enabled' : 'Disabled'}
-                            </Label>
                             <Switch
-                              id={`enabled-${method.id}`}
                               checked={method.enabled}
                               onCheckedChange={(checked) => handleToggleEnabled(method.id, checked)}
                             />
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => startEdit(method.id)}
-                              disabled={editingId !== null || isCreating}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDelete(method.id)}
-                              disabled={deletePaymentMethod.isPending}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <span className="text-xs text-muted-foreground">
+                              {method.enabled ? 'Enabled' : 'Disabled'}
+                            </span>
                           </div>
                         </div>
+                        <p className="text-sm text-muted-foreground break-words">{method.description}</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEdit(method.id)}
+                          disabled={editingId !== null || isCreating}
+                          className="flex-1"
+                        >
+                          <Edit2 className="w-4 h-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(method.id)}
+                          disabled={deletePaymentMethod.isPending}
+                          className="flex-1"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
             ) : (
-              <p className="text-center text-muted-foreground py-8">No payment methods created yet</p>
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No payment methods created yet. Create one to get started.
+              </p>
             )}
           </div>
         </div>

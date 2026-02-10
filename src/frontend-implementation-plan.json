@@ -1,73 +1,113 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Light/Dark theme toggle in Profile with client persistence",
+  "title": "UI refresh + overlap fixes + updated Yug logo assets",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Add an Appearance section in the Profile tab to let users switch between Light and Dark themes.",
+      "summary": "Ensure the frontend rebuilds cleanly and always renders a non-blank shell across connection states.",
       "acceptanceCriteria": [
-        "Profile tab contains an \"Appearance\" (or equivalent) section with controls to select Light or Dark theme.",
-        "Switching the setting immediately updates the UI colors (background/foreground/cards) using the existing Tailwind/CSS variable theme setup.",
-        "All user-facing labels for this section are in English (e.g., \"Appearance\", \"Theme\", \"Light\", \"Dark\")."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/tabs/ProfileTab.tsx",
-          "operation": "modify",
-          "description": "Add an \"Appearance\" section (within existing Profile layout) with Light/Dark selection controls wired to a shared theme state setter. Use existing shadcn/ui composed components (e.g., Card, Button, Label/Input patterns) to match current UI. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useTheme.ts",
-          "operation": "create",
-          "description": "Create a small theme hook that exposes the current theme and a setter (e.g., 'light' | 'dark') so Profile can update theme consistently across the app, applying changes by toggling the document root class to integrate with the existing Tailwind 'dark' + CSS variables setup."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Persist the selected theme in browser storage and restore/apply it on app load.",
-      "acceptanceCriteria": [
-        "Theme selection is saved in browser storage (e.g., localStorage).",
-        "On page load, the app reads the stored theme and applies it before/when rendering so the chosen theme is consistently applied.",
-        "If no stored preference exists, default behavior is clearly defined and consistent (e.g., keep current default dark, but still user-changeable)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useTheme.ts",
-          "operation": "modify",
-          "description": "Implement localStorage persistence for theme selection (read initial value, write on change) and define a consistent default when no preference exists (keep current default behavior as dark unless otherwise detected/decided)."
-        },
-        {
-          "path": "frontend/index.html",
-          "operation": "modify",
-          "description": "Add a small early-load script in the document head to read the saved theme from localStorage and apply/remove the 'dark' class on the <html> element before React renders, to prevent theme flash and ensure the stored preference takes effect immediately."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Remove unconditional runtime dark-mode enforcement and ensure document color-scheme follows the selected theme.",
-      "acceptanceCriteria": [
-        "The app no longer unconditionally forces the `dark` class on `document.documentElement` at runtime.",
-        "When switching themes, `document.documentElement` has the `dark` class only when Dark theme is selected (and removed when Light is selected).",
-        "The document `color-scheme` style is updated to match the selected theme (\"dark\" for dark theme, \"light\" for light theme)."
+        "`dfx deploy` (or the platform build) completes successfully for both frontend and backend.",
+        "The app loads to the main shell without a blank screen or fatal console errors."
       ],
       "file_operations": [
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Remove the current effect that unconditionally adds the 'dark' class and sets colorScheme to dark; instead, rely on the centralized theme hook to apply the class based on user selection."
+          "description": "Remove the `return null` fallback by adding a safe, user-visible loading shell for any non-ready/non-connecting transient state, and ensure all connection/auth states render predictably without runtime errors."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Fix dropdown/popover/menu overlap and clipping so option panels remain readable and accessible above fixed UI on all screen sizes.",
+      "acceptanceCriteria": [
+        "Opening any options menu (e.g., dropdowns/popovers within tabs and dialogs) renders above fixed elements and remains readable.",
+        "Menus are not clipped by parent containers (no hidden content due to `overflow: hidden` on ancestors).",
+        "On small screens, option panels reposition or scroll as needed so all actions are accessible without overlap."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Adjust global Radix/shadcn popper/portal layering so popovers/dropdowns are always above fixed UI (increase portal/popper z-index above BottomNav), and add global max-height/overflow rules for Radix menu/popover/select content to allow scrolling on small screens instead of clipping/overlap."
         },
         {
-          "path": "frontend/src/hooks/useTheme.ts",
+          "path": "frontend/src/components/navigation/BottomNav.tsx",
           "operation": "modify",
-          "description": "Ensure the theme application logic updates both (1) presence/absence of the 'dark' class on document.documentElement and (2) document.documentElement.style.colorScheme to 'dark' or 'light' in sync with the selected theme."
+          "description": "Lower the BottomNav stacking context (z-index) to ensure Radix portal-based menus/panels render above it, while keeping the nav fixed and interactive."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Ensure the main content area and shell containers do not unintentionally create clipping contexts (e.g., avoid/override problematic overflow on layout wrappers) so menus inside tabs/dialogs are not cut off."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Apply a cohesive refreshed gold/charcoal visual theme across the entire UI (tabs, forms, tables, dialogs, admin screens).",
+      "acceptanceCriteria": [
+        "Primary/secondary colors, background, borders, and typography are updated consistently across all tabs (Journal, Calculator, Mistakes, Profile, Admin).",
+        "Updated theme preserves accessibility (text contrast remains readable in light and dark mode if supported).",
+        "No new UI regressions: layouts remain responsive, and key screens (forms, lists, dialogs) remain usable on mobile widths."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Replace the current emerald-driven design tokens with a gold/charcoal palette (light + dark) by updating CSS variables (`--primary`, `--background`, `--card`, `--border`, charts, etc.) and any related global surface/typography tweaks so shadcn/ui components inherit the refreshed theme consistently."
+        },
+        {
+          "path": "frontend/tailwind.config.js",
+          "operation": "modify",
+          "description": "Verify Tailwind theme token wiring remains consistent with the updated CSS variables (no default blue/purple leakage), and adjust any extended theme settings only as needed to support the refreshed theme across components."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Update branding to use the new uploaded-logo-based image and show it in the header and all connecting/loading states.",
+      "acceptanceCriteria": [
+        "A new logo image is added under `frontend/public/assets/generated/` and referenced by `frontend/src/lib/branding.ts` (`LOGO_PATH`).",
+        "Header logo and all existing logo placements (e.g., connecting/initializing/error screens in `frontend/src/App.tsx`) render the new asset without stretching or pixelation.",
+        "Logo loads correctly in production build (no 404)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/branding.ts",
+          "operation": "modify",
+          "description": "Update `LOGO_PATH` to reference the new logo asset at `frontend/public/assets/generated/app-logo-yug-v2.dim_1024x1024.png` and keep branding constants as the single source of truth."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Verify all logo placements (header + connecting/initializing/error states) continue to use `LOGO_PATH` with appropriate sizing (`object-contain`) so the new logo renders crisply without distortion."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Add the newly generated logo/icon images as static frontend assets and reference them directly (no backend proxy).",
+      "acceptanceCriteria": [
+        "Generated image files exist at `frontend/public/assets/generated/*` with the specified filenames.",
+        "`LOGO_PATH` points to a file within `/assets/generated/` and renders correctly at runtime."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/public/assets/generated/app-logo-yug-v2.dim_1024x1024.png",
+          "operation": "create",
+          "description": "Add the generated square app logo asset exactly as specified: `frontend/public/assets/generated/app-logo-yug-v2.dim_1024x1024.png`."
+        },
+        {
+          "path": "frontend/public/assets/generated/app-icon-yug-v2.dim_512x512.png",
+          "operation": "create",
+          "description": "Add the generated square app icon variant exactly as specified: `frontend/public/assets/generated/app-icon-yug-v2.dim_512x512.png`."
         },
         {
           "path": "frontend/index.html",
           "operation": "modify",
-          "description": "Remove the hardcoded default 'dark' class from the <html> tag (if present) so the selected theme (or defined default) is applied via the early theme bootstrap script and not overridden by static markup."
+          "description": "Update icon link tags to use the new static asset(s) under `frontend/public/assets/generated/` (e.g., reference `app-icon-yug-v2.dim_512x512.png` where appropriate) to ensure branding assets are served directly by the frontend and do not 404 in production."
         }
       ]
     }

@@ -9,9 +9,9 @@ export default function MistakesTab() {
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6 max-w-4xl">
-      <Alert className="border-blue-600/20 bg-blue-600/10">
-        <Lightbulb className="h-4 w-4 text-blue-600" />
-        <AlertTitle className="text-blue-600">AI-Powered Learning</AlertTitle>
+      <Alert className="border-primary/20 bg-primary/10">
+        <Lightbulb className="h-4 w-4 text-primary" />
+        <AlertTitle className="text-primary">AI-Powered Learning</AlertTitle>
         <AlertDescription>
           Log your trading mistakes and receive personalized AI suggestions to improve your strategy.
         </AlertDescription>

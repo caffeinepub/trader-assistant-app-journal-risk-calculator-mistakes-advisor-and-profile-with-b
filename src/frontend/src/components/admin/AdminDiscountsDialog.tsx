@@ -6,7 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Tag, Plus, Edit2, Trash2 } from 'lucide-react';
-import { useAdminGetAllDiscounts, useAdminCreateDiscount, useAdminUpdateDiscount, useAdminDeleteDiscount } from '../../hooks/useQueries';
+import {
+  useAdminGetAllDiscounts,
+  useAdminCreateDiscount,
+  useAdminUpdateDiscount,
+  useAdminDeleteDiscount,
+} from '../../hooks/useQueries';
 
 interface AdminDiscountsDialogProps {
   open: boolean;
@@ -28,13 +33,12 @@ export default function AdminDiscountsDialog({ open, onOpenChange }: AdminDiscou
   const handleCreate = async () => {
     if (!code || !percentage || !validUntil) return;
 
-    const validUntilDate = new Date(validUntil);
-    const validUntilNano = BigInt(validUntilDate.getTime()) * BigInt(1_000_000);
+    const validUntilTimestamp = BigInt(new Date(validUntil).getTime() * 1_000_000);
 
     await createDiscount.mutateAsync({
       code,
       percentage: parseFloat(percentage),
-      validUntil: validUntilNano,
+      validUntil: validUntilTimestamp,
     });
 
     setCode('');
@@ -49,14 +53,13 @@ export default function AdminDiscountsDialog({ open, onOpenChange }: AdminDiscou
     const discount = discounts?.find((d) => d.id === id);
     if (!discount) return;
 
-    const validUntilDate = new Date(validUntil);
-    const validUntilNano = BigInt(validUntilDate.getTime()) * BigInt(1_000_000);
+    const validUntilTimestamp = BigInt(new Date(validUntil).getTime() * 1_000_000);
 
     await updateDiscount.mutateAsync({
       id,
       code,
       percentage: parseFloat(percentage),
-      validUntil: validUntilNano,
+      validUntil: validUntilTimestamp,
       enabled: discount.enabled,
     });
 
@@ -92,8 +95,8 @@ export default function AdminDiscountsDialog({ open, onOpenChange }: AdminDiscou
     setEditingId(id);
     setCode(discount.code);
     setPercentage(discount.percentage.toString());
-    const validUntilDate = new Date(Number(discount.validUntil) / 1_000_000);
-    setValidUntil(validUntilDate.toISOString().split('T')[0]);
+    const date = new Date(Number(discount.validUntil) / 1_000_000);
+    setValidUntil(date.toISOString().split('T')[0]);
   };
 
   const cancelEdit = () => {
@@ -103,13 +106,18 @@ export default function AdminDiscountsDialog({ open, onOpenChange }: AdminDiscou
     setValidUntil('');
   };
 
+  const formatDate = (timestamp: bigint) => {
+    const date = new Date(Number(timestamp) / 1_000_000);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Tag className="w-5 h-5 text-primary" />
-            Discount Management
+            Discount Codes Management
           </DialogTitle>
           <DialogDescription className="break-words">
             Create, edit, enable/disable, and delete discount codes
@@ -121,7 +129,7 @@ export default function AdminDiscountsDialog({ open, onOpenChange }: AdminDiscou
           {!isCreating && !editingId && (
             <Button onClick={() => setIsCreating(true)} className="w-full bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4 mr-2" />
-              Create New Discount
+              Create New Discount Code
             </Button>
           )}
 
@@ -136,20 +144,21 @@ export default function AdminDiscountsDialog({ open, onOpenChange }: AdminDiscou
                     value={code}
                     onChange={(e) => setCode(e.target.value.toUpperCase())}
                     placeholder="e.g., SAVE20"
-                    className="break-all"
+                    className="break-words"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="percentage">Discount %</Label>
+                    <Label htmlFor="percentage">Discount Percentage</Label>
                     <Input
                       id="percentage"
                       type="number"
-                      min="0"
-                      max="100"
                       value={percentage}
                       onChange={(e) => setPercentage(e.target.value)}
                       placeholder="e.g., 20"
+                      min="0"
+                      max="100"
+                      step="0.1"
                     />
                   </div>
                   <div className="space-y-2">
@@ -163,109 +172,87 @@ export default function AdminDiscountsDialog({ open, onOpenChange }: AdminDiscou
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  {isCreating ? (
-                    <>
-                      <Button
-                        onClick={handleCreate}
-                        disabled={createDiscount.isPending || !code || !percentage || !validUntil}
-                        className="flex-1 bg-primary hover:bg-primary/90"
-                      >
-                        {createDiscount.isPending ? 'Creating...' : 'Create Discount'}
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setIsCreating(false);
-                          setCode('');
-                          setPercentage('');
-                          setValidUntil('');
-                        }}
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        Cancel
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        onClick={() => editingId && handleUpdate(editingId)}
-                        disabled={updateDiscount.isPending || !code || !percentage || !validUntil}
-                        className="flex-1 bg-primary hover:bg-primary/90"
-                      >
-                        {updateDiscount.isPending ? 'Saving...' : 'Save Changes'}
-                      </Button>
-                      <Button onClick={cancelEdit} variant="outline" className="flex-1">
-                        Cancel
-                      </Button>
-                    </>
-                  )}
+                  <Button
+                    onClick={() => (editingId !== null ? handleUpdate(editingId) : handleCreate())}
+                    disabled={
+                      !code || !percentage || !validUntil || createDiscount.isPending || updateDiscount.isPending
+                    }
+                    className="flex-1"
+                  >
+                    {editingId !== null ? 'Update' : 'Create'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (isCreating) setIsCreating(false);
+                      if (editingId !== null) cancelEdit();
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Existing Discounts */}
+          {/* Discounts List */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold">Existing Discounts</h3>
             {isLoading ? (
-              <div className="text-center py-8">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-              </div>
+              <p className="text-sm text-muted-foreground">Loading discounts...</p>
             ) : discounts && discounts.length > 0 ? (
-              <div className="space-y-3">
-                {discounts.map((discount) => {
-                  const validUntilDate = new Date(Number(discount.validUntil) / 1_000_000);
-                  const isExpired = validUntilDate < new Date();
-                  
-                  return (
-                    <Card key={discount.id.toString()}>
-                      <CardContent className="pt-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="space-y-1 min-w-0 flex-1">
-                            <p className="font-semibold text-lg break-all">{discount.code}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {discount.percentage}% off • Valid until {validUntilDate.toLocaleDateString()}
-                              {isExpired && <span className="text-destructive ml-2">(Expired)</span>}
-                            </p>
-                          </div>
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
-                            <div className="flex items-center gap-2">
-                              <Label htmlFor={`enabled-${discount.id}`} className="text-sm">
-                                {discount.enabled ? 'Enabled' : 'Disabled'}
-                              </Label>
-                              <Switch
-                                id={`enabled-${discount.id}`}
-                                checked={discount.enabled}
-                                onCheckedChange={(checked) => handleToggleEnabled(discount.id, checked)}
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => startEdit(discount.id)}
-                                disabled={editingId !== null || isCreating}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDelete(discount.id)}
-                                disabled={deleteDiscount.isPending}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
+              discounts.map((discount) => (
+                <Card key={Number(discount.id)}>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                          <h3 className="font-semibold font-mono break-all">{discount.code}</h3>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={discount.enabled}
+                              onCheckedChange={(checked) => handleToggleEnabled(discount.id, checked)}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {discount.enabled ? 'Enabled' : 'Disabled'}
+                            </span>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+                        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                          <span>{discount.percentage}% off</span>
+                          <span>Valid until: {formatDate(discount.validUntil)}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEdit(discount.id)}
+                          disabled={editingId !== null || isCreating}
+                          className="flex-1"
+                        >
+                          <Edit2 className="w-4 h-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(discount.id)}
+                          disabled={deleteDiscount.isPending}
+                          className="flex-1"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
             ) : (
-              <p className="text-center text-muted-foreground py-8">No discounts created yet</p>
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No discount codes created yet. Create one to get started.
+              </p>
             )}
           </div>
         </div>

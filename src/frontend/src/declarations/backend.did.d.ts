@@ -149,6 +149,11 @@ export interface _SERVICE {
   'createUserProfile' : ActorMethod<[string, string], UserProfile>,
   'deleteMistakeEntry' : ActorMethod<[bigint], undefined>,
   'deleteTradeEntry' : ActorMethod<[bigint], undefined>,
+  'ensureHasUserAndGetPaymentQRCode' : ActorMethod<[], [] | [ExternalBlob]>,
+  'ensureHasUserAndGetSubscriptionState' : ActorMethod<
+    [],
+    [] | [SubscriptionState]
+  >,
   'findUserById' : ActorMethod<[bigint], [] | [[Principal, UserProfile]]>,
   'getActiveDiscounts' : ActorMethod<[], Array<Discount>>,
   'getAllMistakes' : ActorMethod<[], Array<MistakeEntry>>,
@@ -191,8 +196,6 @@ export interface _SERVICE {
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getDailyProfitForDate' : ActorMethod<[Time], number>,
   'getEnabledPaymentMethods' : ActorMethod<[], Array<PaymentMethod>>,
-  'getPaymentQRCode' : ActorMethod<[], [] | [ExternalBlob]>,
-  'getSubscriptionState' : ActorMethod<[], [] | [SubscriptionState]>,
   'getTradesByDateRange' : ActorMethod<[Time, Time], Array<TradeEntry>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'grantAdminRole' : ActorMethod<[Principal], undefined>,

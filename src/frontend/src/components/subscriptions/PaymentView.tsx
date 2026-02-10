@@ -3,131 +3,114 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Upload, CheckCircle, AlertTriangle, QrCode } from 'lucide-react';
-import { useSubmitPayment, useGetActiveDiscounts, useGetPaymentQRCode } from '../../hooks/useQueries';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle2, Upload, X } from 'lucide-react';
 import { SubscriptionPlan } from '../../backend';
+import { useSubmitPayment, useGetPaymentQRCode } from '../../hooks/useQueries';
+import { toast } from 'sonner';
 
 interface PaymentViewProps {
   plan: SubscriptionPlan;
   onBack: () => void;
 }
 
+const PLAN_PRICES: Record<SubscriptionPlan, number> = {
+  [SubscriptionPlan.basic]: 299,
+  [SubscriptionPlan.pro]: 799,
+  [SubscriptionPlan.premium]: 999,
+};
+
+const PLAN_NAMES: Record<SubscriptionPlan, string> = {
+  [SubscriptionPlan.basic]: 'Basic',
+  [SubscriptionPlan.pro]: 'Pro',
+  [SubscriptionPlan.premium]: 'Premium',
+};
+
 export default function PaymentView({ plan, onBack }: PaymentViewProps) {
-  const submitPayment = useSubmitPayment();
-  const { data: activeDiscounts } = useGetActiveDiscounts();
-  const { data: paymentQRCode } = useGetPaymentQRCode();
-
-  const [transactionId, setTransactionId] = useState('');
   const [couponCode, setCouponCode] = useState('');
-  const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [transactionId, setTransactionId] = useState('');
+  const [paymentFile, setPaymentFile] = useState<File | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const planPrices = {
-    [SubscriptionPlan.basic]: 299,
-    [SubscriptionPlan.pro]: 799,
-    [SubscriptionPlan.premium]: 999,
-  };
+  const submitPayment = useSubmitPayment();
+  const { data: qrCodeBlob } = useGetPaymentQRCode();
 
-  const basePrice = planPrices[plan];
-  const [finalAmount, setFinalAmount] = useState(basePrice);
+  const basePrice = PLAN_PRICES[plan];
+  const finalAmount = basePrice;
 
   useEffect(() => {
-    let amount = basePrice;
+    setIsSubmitted(false);
+  }, [plan]);
 
-    if (couponCode && activeDiscounts) {
-      const discount = activeDiscounts.find((d) => d.code === couponCode.toUpperCase());
-      if (discount) {
-        amount = Math.round(basePrice * (1 - discount.percentage / 100));
-      }
-    }
-
-    setFinalAmount(amount);
-  }, [couponCode, basePrice, activeDiscounts]);
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      setError('Please upload a PDF file');
-      return;
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast.error('Please upload a PDF file');
+        return;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        toast.error('File size must be less than 8MB');
+        return;
+      }
+      setPaymentFile(file);
     }
-
-    if (file.size > 8 * 1024 * 1024) {
-      setError('File size must be less than 8MB');
-      return;
-    }
-
-    setPaymentProofFile(file);
-    setError('');
   };
 
   const handleSubmit = async () => {
-    setError('');
-
-    if (!transactionId) {
-      setError('Please enter transaction ID');
+    if (!transactionId.trim()) {
+      toast.error('Please enter a transaction ID');
       return;
     }
 
-    if (!paymentProofFile) {
-      setError('Please upload payment proof (PDF)');
+    if (!paymentFile) {
+      toast.error('Please upload payment proof (PDF)');
       return;
     }
 
     try {
-      const arrayBuffer = await paymentProofFile.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
+      const fileBuffer = await paymentFile.arrayBuffer();
+      const fileBytes = new Uint8Array(fileBuffer);
 
       await submitPayment.mutateAsync({
         plan,
-        couponCode: couponCode || null,
+        couponCode: couponCode.trim() || null,
         pointsRedeemed: BigInt(0),
         finalAmount: BigInt(finalAmount),
-        transactionId,
-        fileType: paymentProofFile.type,
-        fileSize: BigInt(paymentProofFile.size),
-        paymentProof: uint8Array,
+        transactionId: transactionId.trim(),
+        fileType: paymentFile.type,
+        fileSize: BigInt(paymentFile.size),
+        paymentProof: fileBytes,
       });
 
-      setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit payment. Please try again.');
+      setIsSubmitted(true);
+      toast.success('Payment submitted successfully!');
+    } catch (error: any) {
+      console.error('Payment submission error:', error);
+      toast.error(error.message || 'Failed to submit payment');
     }
   };
 
-  const getPlanName = () => {
-    switch (plan) {
-      case SubscriptionPlan.basic:
-        return 'Basic';
-      case SubscriptionPlan.pro:
-        return 'Pro';
-      case SubscriptionPlan.premium:
-        return 'Premium';
-      default:
-        return 'Unknown';
-    }
-  };
-
-  if (success) {
+  if (isSubmitted) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <Card>
-          <CardContent className="pt-12 pb-12 text-center space-y-6">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+        <Card className="border-primary/20">
+          <CardContent className="pt-12 pb-12">
+            <div className="flex flex-col items-center justify-center text-center space-y-6">
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                <CheckCircle2 className="w-12 h-12 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold">Payment Submitted!</h2>
+                <p className="text-muted-foreground max-w-md break-words">
+                  Your payment has been submitted for review. An admin will verify and approve your subscription within
+                  24-48 hours.
+                </p>
+              </div>
+              <Button onClick={onBack} variant="outline" className="mt-4">
+                Back to Plans
+              </Button>
             </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold">Payment Submitted!</h2>
-              <p className="text-muted-foreground">
-                Your payment has been submitted successfully. An admin will review and approve your subscription shortly.
-              </p>
-            </div>
-            <Button onClick={onBack} className="bg-primary hover:bg-primary/90">
-              Back to Plans
-            </Button>
           </CardContent>
         </Card>
       </div>
@@ -135,130 +118,134 @@ export default function PaymentView({ plan, onBack }: PaymentViewProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl space-y-6">
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Button variant="ghost" onClick={onBack} className="mb-4">
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Plans
+        ← Back to Plans
       </Button>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Complete Payment</CardTitle>
-          <CardDescription>
-            Submit your payment details for {getPlanName()} Plan
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Payment QR Code */}
-          {paymentQRCode ? (
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <QrCode className="w-4 h-4" />
-                Payment QR Code
-              </Label>
-              <div className="flex justify-center p-4 bg-muted/30 rounded-lg">
-                <img
-                  src={paymentQRCode.getDirectURL()}
-                  alt="Payment QR Code"
-                  className="max-w-full max-h-80 w-auto h-auto object-contain rounded-lg border shadow-sm"
-                />
-              </div>
-              <p className="text-sm text-muted-foreground text-center">
-                Scan this QR code to make the payment
-              </p>
-            </div>
-          ) : (
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Payment QR code not configured. Please contact admin for payment details.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Price Summary */}
-          <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
-            <div className="flex justify-between">
-              <span>Base Price:</span>
-              <span>₹{basePrice}</span>
-            </div>
-            {couponCode && activeDiscounts?.find((d) => d.code === couponCode.toUpperCase()) && (
-              <div className="flex justify-between text-green-600 dark:text-green-400">
-                <span>Discount ({couponCode}):</span>
-                <span>-₹{basePrice - finalAmount}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Payment QR Code */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment QR Code</CardTitle>
+            <CardDescription className="break-words">Scan to make payment</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center p-6">
+            {qrCodeBlob ? (
+              <img
+                src={qrCodeBlob.getDirectURL()}
+                alt="Payment QR Code"
+                className="w-full max-w-sm rounded-lg border"
+              />
+            ) : (
+              <div className="w-full max-w-sm aspect-square bg-muted rounded-lg flex items-center justify-center">
+                <p className="text-muted-foreground text-center px-4 break-words">
+                  QR code not available. Please contact admin.
+                </p>
               </div>
             )}
-            <div className="flex justify-between font-bold text-lg pt-2 border-t">
-              <span>Total:</span>
-              <span>₹{finalAmount}</span>
+          </CardContent>
+        </Card>
+
+        {/* Payment Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Submit Payment Proof</CardTitle>
+            <CardDescription className="break-words">
+              Upload your payment proof and transaction details
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Plan Summary */}
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Selected Plan:</span>
+                <Badge variant="outline">{PLAN_NAMES[plan]}</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Amount:</span>
+                <span className="text-lg font-bold">₹{finalAmount}</span>
+              </div>
             </div>
-          </div>
 
-          {error && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+            {/* Coupon Code (Optional) */}
+            <div className="space-y-2">
+              <Label htmlFor="coupon">Coupon Code (Optional)</Label>
+              <Input
+                id="coupon"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                placeholder="Enter coupon code"
+                disabled
+              />
+              <p className="text-xs text-muted-foreground break-words">Coupon validation coming soon</p>
+            </div>
 
-          {/* Coupon Code */}
-          <div className="space-y-2">
-            <Label htmlFor="coupon">Coupon Code (Optional)</Label>
-            <Input
-              id="coupon"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-              placeholder="Enter coupon code"
-            />
-          </div>
+            {/* Transaction ID */}
+            <div className="space-y-2">
+              <Label htmlFor="transactionId">
+                Transaction ID <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="transactionId"
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value)}
+                placeholder="Enter transaction ID"
+                required
+              />
+            </div>
 
-          {/* Transaction ID */}
-          <div className="space-y-2">
-            <Label htmlFor="transactionId">Transaction ID *</Label>
-            <Input
-              id="transactionId"
-              value={transactionId}
-              onChange={(e) => setTransactionId(e.target.value)}
-              placeholder="Enter transaction ID from payment"
-            />
-          </div>
-
-          {/* Payment Proof Upload */}
-          <div className="space-y-2">
-            <Label htmlFor="paymentProof">Payment Proof (PDF) *</Label>
-            <div className="flex items-center gap-2">
-              <label className="flex-1">
-                <input
+            {/* Payment Proof Upload */}
+            <div className="space-y-2">
+              <Label htmlFor="paymentProof">
+                Payment Proof (PDF) <span className="text-destructive">*</span>
+              </Label>
+              <div className="flex flex-col gap-2">
+                <Input
                   id="paymentProof"
                   type="file"
                   accept="application/pdf"
-                  onChange={handleFileSelect}
-                  className="hidden"
+                  onChange={handleFileChange}
+                  className="cursor-pointer"
+                  required
                 />
-                <Button type="button" variant="outline" className="w-full" asChild>
-                  <span>
-                    <Upload className="w-4 h-4 mr-2" />
-                    {paymentProofFile ? paymentProofFile.name : 'Select PDF File'}
-                  </span>
-                </Button>
-              </label>
-            </div>
-            {paymentProofFile && (
-              <p className="text-sm text-muted-foreground">
-                {(paymentProofFile.size / 1024).toFixed(2)} KB
+                {paymentFile && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 bg-muted rounded">
+                    <Upload className="w-4 h-4 shrink-0" />
+                    <span className="flex-1 truncate">{paymentFile.name}</span>
+                    <button
+                      onClick={() => setPaymentFile(null)}
+                      className="text-destructive hover:text-destructive/80"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground break-words">
+                Upload a PDF screenshot or receipt of your payment (max 8MB)
               </p>
-            )}
-          </div>
+            </div>
 
-          <Button
-            onClick={handleSubmit}
-            disabled={submitPayment.isPending || !transactionId || !paymentProofFile}
-            className="w-full bg-primary hover:bg-primary/90"
-          >
-            {submitPayment.isPending ? 'Submitting...' : 'Submit Payment'}
-          </Button>
-        </CardContent>
-      </Card>
+            {/* Submit Button */}
+            <Button
+              onClick={handleSubmit}
+              disabled={!transactionId.trim() || !paymentFile || submitPayment.isPending}
+              className="w-full"
+            >
+              {submitPayment.isPending ? 'Submitting...' : 'Submit Payment'}
+            </Button>
+
+            {/* Info */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+              <p className="text-sm text-foreground/90 break-words">
+                After submission, an admin will review and approve your payment within 24-48 hours. You'll receive
+                access to your selected plan once approved.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

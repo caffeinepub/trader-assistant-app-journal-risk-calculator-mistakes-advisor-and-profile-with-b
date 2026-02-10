@@ -89,13 +89,13 @@ export const UserProfile = IDL.Record({
   'userId' : IDL.Nat,
   'fullName' : IDL.Text,
 });
+export const ExternalBlob = IDL.Vec(IDL.Nat8);
 export const SubscriptionState = IDL.Record({
   'trialActive' : IDL.Bool,
   'paidStart' : IDL.Opt(Time),
   'plan' : IDL.Opt(SubscriptionPlan),
   'trialStart' : Time,
 });
-export const ExternalBlob = IDL.Vec(IDL.Nat8);
 
 export const idlService = IDL.Service({
   '_caffeineStorageBlobIsLive' : IDL.Func(
@@ -199,15 +199,25 @@ export const idlService = IDL.Service({
   'createUserProfile' : IDL.Func([IDL.Text, IDL.Text], [UserProfile], []),
   'deleteMistakeEntry' : IDL.Func([IDL.Nat], [], []),
   'deleteTradeEntry' : IDL.Func([IDL.Nat], [], []),
+  'ensureHasUserAndGetPaymentQRCode' : IDL.Func(
+      [],
+      [IDL.Opt(ExternalBlob)],
+      ['query'],
+    ),
+  'ensureHasUserAndGetSubscriptionState' : IDL.Func(
+      [],
+      [IDL.Opt(SubscriptionState)],
+      ['query'],
+    ),
   'findUserById' : IDL.Func(
       [IDL.Nat],
       [IDL.Opt(IDL.Tuple(IDL.Principal, UserProfile))],
       ['query'],
     ),
   'getActiveDiscounts' : IDL.Func([], [IDL.Vec(Discount)], ['query']),
-  'getAllMistakes' : IDL.Func([], [IDL.Vec(MistakeEntry)], ['query']),
-  'getAllTradeDates' : IDL.Func([], [IDL.Vec(Time)], ['query']),
-  'getAllTrades' : IDL.Func([], [IDL.Vec(TradeEntry)], ['query']),
+  'getAllMistakes' : IDL.Func([], [IDL.Vec(MistakeEntry)], []),
+  'getAllTradeDates' : IDL.Func([], [IDL.Vec(Time)], []),
+  'getAllTrades' : IDL.Func([], [IDL.Vec(TradeEntry)], []),
   'getAllUserData' : IDL.Func(
       [],
       [
@@ -241,7 +251,7 @@ export const idlService = IDL.Service({
           'accuracy' : IDL.Float64,
         }),
       ],
-      ['query'],
+      [],
     ),
   'getCallerPlan' : IDL.Func(
       [],
@@ -254,27 +264,17 @@ export const idlService = IDL.Service({
           })
         ),
       ],
-      ['query'],
+      [],
     ),
-  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], []),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
-  'getDailyProfitForDate' : IDL.Func([Time], [IDL.Float64], ['query']),
+  'getDailyProfitForDate' : IDL.Func([Time], [IDL.Float64], []),
   'getEnabledPaymentMethods' : IDL.Func(
       [],
       [IDL.Vec(PaymentMethod)],
       ['query'],
     ),
-  'getPaymentQRCode' : IDL.Func([], [IDL.Opt(ExternalBlob)], ['query']),
-  'getSubscriptionState' : IDL.Func(
-      [],
-      [IDL.Opt(SubscriptionState)],
-      ['query'],
-    ),
-  'getTradesByDateRange' : IDL.Func(
-      [Time, Time],
-      [IDL.Vec(TradeEntry)],
-      ['query'],
-    ),
+  'getTradesByDateRange' : IDL.Func([Time, Time], [IDL.Vec(TradeEntry)], []),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -283,7 +283,7 @@ export const idlService = IDL.Service({
   'grantAdminRole' : IDL.Func([IDL.Principal], [], []),
   'healthCheck' : IDL.Func([], [IDL.Text], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'isLockedAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'isLockedAdmin' : IDL.Func([], [IDL.Bool], []),
   'isUserRegistered' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
   'revokeAdminRole' : IDL.Func([IDL.Principal], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
@@ -391,13 +391,13 @@ export const idlFactory = ({ IDL }) => {
     'userId' : IDL.Nat,
     'fullName' : IDL.Text,
   });
+  const ExternalBlob = IDL.Vec(IDL.Nat8);
   const SubscriptionState = IDL.Record({
     'trialActive' : IDL.Bool,
     'paidStart' : IDL.Opt(Time),
     'plan' : IDL.Opt(SubscriptionPlan),
     'trialStart' : Time,
   });
-  const ExternalBlob = IDL.Vec(IDL.Nat8);
   
   return IDL.Service({
     '_caffeineStorageBlobIsLive' : IDL.Func(
@@ -501,15 +501,25 @@ export const idlFactory = ({ IDL }) => {
     'createUserProfile' : IDL.Func([IDL.Text, IDL.Text], [UserProfile], []),
     'deleteMistakeEntry' : IDL.Func([IDL.Nat], [], []),
     'deleteTradeEntry' : IDL.Func([IDL.Nat], [], []),
+    'ensureHasUserAndGetPaymentQRCode' : IDL.Func(
+        [],
+        [IDL.Opt(ExternalBlob)],
+        ['query'],
+      ),
+    'ensureHasUserAndGetSubscriptionState' : IDL.Func(
+        [],
+        [IDL.Opt(SubscriptionState)],
+        ['query'],
+      ),
     'findUserById' : IDL.Func(
         [IDL.Nat],
         [IDL.Opt(IDL.Tuple(IDL.Principal, UserProfile))],
         ['query'],
       ),
     'getActiveDiscounts' : IDL.Func([], [IDL.Vec(Discount)], ['query']),
-    'getAllMistakes' : IDL.Func([], [IDL.Vec(MistakeEntry)], ['query']),
-    'getAllTradeDates' : IDL.Func([], [IDL.Vec(Time)], ['query']),
-    'getAllTrades' : IDL.Func([], [IDL.Vec(TradeEntry)], ['query']),
+    'getAllMistakes' : IDL.Func([], [IDL.Vec(MistakeEntry)], []),
+    'getAllTradeDates' : IDL.Func([], [IDL.Vec(Time)], []),
+    'getAllTrades' : IDL.Func([], [IDL.Vec(TradeEntry)], []),
     'getAllUserData' : IDL.Func(
         [],
         [
@@ -543,7 +553,7 @@ export const idlFactory = ({ IDL }) => {
             'accuracy' : IDL.Float64,
           }),
         ],
-        ['query'],
+        [],
       ),
     'getCallerPlan' : IDL.Func(
         [],
@@ -556,27 +566,17 @@ export const idlFactory = ({ IDL }) => {
             })
           ),
         ],
-        ['query'],
+        [],
       ),
-    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], []),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
-    'getDailyProfitForDate' : IDL.Func([Time], [IDL.Float64], ['query']),
+    'getDailyProfitForDate' : IDL.Func([Time], [IDL.Float64], []),
     'getEnabledPaymentMethods' : IDL.Func(
         [],
         [IDL.Vec(PaymentMethod)],
         ['query'],
       ),
-    'getPaymentQRCode' : IDL.Func([], [IDL.Opt(ExternalBlob)], ['query']),
-    'getSubscriptionState' : IDL.Func(
-        [],
-        [IDL.Opt(SubscriptionState)],
-        ['query'],
-      ),
-    'getTradesByDateRange' : IDL.Func(
-        [Time, Time],
-        [IDL.Vec(TradeEntry)],
-        ['query'],
-      ),
+    'getTradesByDateRange' : IDL.Func([Time, Time], [IDL.Vec(TradeEntry)], []),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
@@ -585,7 +585,7 @@ export const idlFactory = ({ IDL }) => {
     'grantAdminRole' : IDL.Func([IDL.Principal], [], []),
     'healthCheck' : IDL.Func([], [IDL.Text], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'isLockedAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'isLockedAdmin' : IDL.Func([], [IDL.Bool], []),
     'isUserRegistered' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'revokeAdminRole' : IDL.Func([IDL.Principal], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),

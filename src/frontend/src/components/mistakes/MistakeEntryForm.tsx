@@ -86,7 +86,7 @@ export default function MistakeEntryForm() {
 
           <Button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full"
             disabled={createMistake.isPending || !description.trim()}
           >
             {createMistake.isPending ? (

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useActorWithStatus } from './hooks/useActorWithStatus';
-import { useGetCallerUserProfile } from './hooks/useQueries';
+import { useInitializeUserAccess, useGetCallerUserProfile } from './hooks/useQueries';
 import { useEntitlement } from './hooks/useEntitlement';
-import { BookOpen, Calculator, AlertTriangle, User, RefreshCw, WifiOff, ServerCrash, ChevronDown, ChevronUp, Shield } from 'lucide-react';
+import { BookOpen, Calculator, AlertTriangle, User, RefreshCw, WifiOff, ServerCrash, ChevronDown, ChevronUp, Shield, Lock, AlertCircle } from 'lucide-react';
 import LoginButton from './components/auth/LoginButton';
 import ProfileSetupDialog from './components/profile/ProfileSetupDialog';
 import JournalTab from './tabs/JournalTab';
@@ -11,6 +11,7 @@ import RiskCalculatorTab from './tabs/RiskCalculatorTab';
 import MistakesTab from './tabs/MistakesTab';
 import ProfileTab from './tabs/ProfileTab';
 import AdminPanelTab from './tabs/AdminPanelTab';
+import BottomNav from './components/navigation/BottomNav';
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -21,34 +22,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 type TabType = 'journal' | 'calculator' | 'mistakes' | 'profile' | 'admin';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('profile');
   const [showErrorDetails, setShowErrorDetails] = useState(false);
   const { identity } = useInternetIdentity();
-  const { status, error, retry, isConnecting, nextRetryIn } = useActorWithStatus();
-  const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
-  const entitlement = useEntitlement();
+  const { status, error, retry, isConnecting, nextRetryIn, retryCount } = useActorWithStatus();
 
   const isAuthenticated = !!identity;
-  const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null && status === 'ready';
-
-  // Build tabs based on entitlement - Admin Panel always visible when authenticated
-  const allTabs = [
-    { id: 'journal' as TabType, label: 'Journal', icon: BookOpen, enabled: entitlement.hasJournal },
-    { id: 'calculator' as TabType, label: 'Calculator', icon: Calculator, enabled: entitlement.hasCalculator },
-    { id: 'mistakes' as TabType, label: 'Mistakes', icon: AlertTriangle, enabled: entitlement.hasMistakes },
-    { id: 'profile' as TabType, label: 'Profile', icon: User, enabled: true },
-    { id: 'admin' as TabType, label: 'Admin Panel', icon: Shield, enabled: isAuthenticated },
-  ];
-
-  const tabs = allTabs.filter(tab => tab.enabled);
-
-  // Redirect to profile if current tab is not enabled
-  useEffect(() => {
-    const currentTabEnabled = allTabs.find(tab => tab.id === activeTab)?.enabled;
-    if (!currentTabEnabled) {
-      setActiveTab('profile');
-    }
-  }, [entitlement, activeTab, isAuthenticated]);
 
   // Show connecting state
   if (isConnecting) {
@@ -85,7 +63,10 @@ export default function App() {
             <div className="space-y-2">
               <h2 className="text-2xl font-bold">Connecting to backend...</h2>
               <p className="text-muted-foreground">
-                Initializing the backend canister. This usually takes a few seconds.
+                {retryCount > 0 
+                  ? `Retry attempt ${retryCount}. The backend is starting up, please wait...`
+                  : 'Initializing the backend canister. This usually takes a few seconds.'
+                }
               </p>
             </div>
             <div className="flex items-center justify-center gap-2">
@@ -129,87 +110,103 @@ export default function App() {
         <main className="flex-1 flex items-center justify-center p-4">
           <div className="max-w-md w-full space-y-6">
             <div className="w-20 h-20 mx-auto rounded-2xl bg-destructive/10 flex items-center justify-center">
-              {errorClassification.isStoppedCanister ? (
+              {errorClassification.isMisconfigured ? (
+                <AlertCircle className="w-10 h-10 text-destructive" />
+              ) : errorClassification.isStoppedCanister ? (
                 <ServerCrash className="w-10 h-10 text-destructive" />
+              ) : errorClassification.isAuthorizationError ? (
+                <Lock className="w-10 h-10 text-destructive" />
               ) : (
                 <WifiOff className="w-10 h-10 text-destructive" />
               )}
             </div>
             
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>{errorClassification.title}</AlertTitle>
-              <AlertDescription className="mt-2 space-y-2">
-                <p>{errorClassification.description}</p>
-                
-                {/* Auto-retry indicator */}
-                {errorClassification.isStoppedCanister && nextRetryIn !== null && (
-                  <div className="mt-3 p-2 bg-background/50 rounded-md border border-border">
-                    <p className="text-xs font-medium">
-                      Automatically retrying in {nextRetryIn} second{nextRetryIn !== 1 ? 's' : ''}...
-                    </p>
-                  </div>
-                )}
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold">{errorClassification.title}</h2>
+              <p className="text-muted-foreground">{errorClassification.description}</p>
+            </div>
 
-                {/* Error details collapsible */}
-                <Collapsible open={showErrorDetails} onOpenChange={setShowErrorDetails}>
-                  <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mt-2">
+            {errorClassification.isStoppedCanister && !errorClassification.isMisconfigured && (
+              <Alert>
+                <AlertTitle>What you can do:</AlertTitle>
+                <AlertDescription className="space-y-2 mt-2">
+                  <p className="text-sm">• Wait 10-15 seconds for the backend to start automatically</p>
+                  <p className="text-sm">• Refresh the page if the issue persists</p>
+                  <p className="text-sm">• The app will automatically retry the connection</p>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {errorClassification.isAuthorizationError && (
+              <Alert>
+                <AlertTitle>What you can do:</AlertTitle>
+                <AlertDescription className="space-y-2 mt-2">
+                  <p className="text-sm">• Try logging out and logging in again</p>
+                  <p className="text-sm">• Contact support if the issue persists</p>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex flex-col gap-3">
+              {errorClassification.shouldRetry && (
+                <Button onClick={retry} className="w-full" size="lg">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Retry Connection
+                  {nextRetryIn !== null && nextRetryIn > 0 && ` (${Math.ceil(nextRetryIn)}s)`}
+                </Button>
+              )}
+
+              <Collapsible open={showErrorDetails} onOpenChange={setShowErrorDetails}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full">
                     {showErrorDetails ? (
                       <>
-                        <ChevronUp className="w-3 h-3" />
-                        Hide technical details
+                        <ChevronUp className="w-4 h-4 mr-2" />
+                        Hide Technical Details
                       </>
                     ) : (
                       <>
-                        <ChevronDown className="w-3 h-3" />
-                        Show technical details
+                        <ChevronDown className="w-4 h-4 mr-2" />
+                        Show Technical Details
                       </>
                     )}
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-2 space-y-2">
-                    <div className="p-2 bg-background/50 rounded text-xs font-mono break-all">
-                      <div className="font-semibold mb-1">Error:</div>
-                      {error.message}
-                    </div>
-                    {errorClassification.diagnostics && (
-                      <div className="p-2 bg-background/50 rounded text-xs font-mono break-all whitespace-pre-wrap">
-                        <div className="font-semibold mb-1">Backend Diagnostics:</div>
-                        {errorClassification.diagnostics}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  <Alert>
+                    <AlertDescription className="space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold mb-1">Error Type:</p>
+                        <p className="text-xs font-mono break-all">
+                          {errorClassification.isMisconfigured 
+                            ? 'Configuration Error (Missing Backend Canister ID)' 
+                            : errorClassification.isStoppedCanister 
+                            ? 'Stopped Canister / Health Check Failed' 
+                            : errorClassification.isAuthorizationError 
+                            ? 'Authorization Error' 
+                            : 'Connection Error'}
+                        </p>
                       </div>
-                    )}
-                  </CollapsibleContent>
-                </Collapsible>
-              </AlertDescription>
-            </Alert>
-
-            <div className="space-y-3 text-center">
-              <p className="text-sm font-medium text-foreground">What to do:</p>
-              <ul className="text-sm text-muted-foreground space-y-2 text-left list-decimal list-inside">
-                <li>Click "Try Again" below to retry the connection</li>
-                <li>If the error persists, refresh the page completely</li>
-                <li>Wait 10-15 seconds after refresh for the backend to initialize</li>
-              </ul>
-            </div>
-
-            <div className="space-y-2">
-              <Button 
-                onClick={retry} 
-                disabled={isConnecting || nextRetryIn !== null}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50"
-                size="lg"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${nextRetryIn !== null ? 'animate-spin' : ''}`} />
-                {nextRetryIn !== null ? `Retrying in ${nextRetryIn}s...` : 'Try Again'}
-              </Button>
-              
-              <Button 
-                onClick={() => window.location.reload()} 
-                variant="outline"
-                className="w-full"
-                size="lg"
-              >
-                Refresh Page
-              </Button>
+                      <div>
+                        <p className="text-xs font-semibold mb-1">Error Message:</p>
+                        <p className="text-xs font-mono break-all">{error.message}</p>
+                      </div>
+                      {errorClassification.diagnostics && (
+                        <div>
+                          <p className="text-xs font-semibold mb-1">Backend Diagnostics:</p>
+                          <pre className="text-xs font-mono break-all whitespace-pre-wrap bg-muted p-2 rounded">
+                            {errorClassification.diagnostics}
+                          </pre>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs font-semibold mb-1">Retry Count:</p>
+                        <p className="text-xs">{retryCount} attempts</p>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </div>
         </main>
@@ -217,12 +214,160 @@ export default function App() {
     );
   }
 
-  // Show main app
+  // Main app UI - only render when backend is ready
+  if (status === 'ready') {
+    return <AuthenticatedApp isAuthenticated={isAuthenticated} />;
+  }
+
+  // Safe loading fallback (instead of null)
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
       <Toaster />
-      
-      {/* Profile Setup Dialog */}
+      <div className="text-center space-y-4">
+        <img 
+          src={LOGO_PATH} 
+          alt={`${APP_NAME} logo`}
+          className="w-16 h-16 mx-auto object-contain animate-pulse"
+        />
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+// Separate component that uses hooks requiring authenticated actor
+function AuthenticatedApp({ isAuthenticated }: { isAuthenticated: boolean }) {
+  const [activeTab, setActiveTab] = useState<TabType>('profile');
+  
+  // Initialize user access on login (auto-grants #user role)
+  const { isLoading: isInitializing, isError: initError } = useInitializeUserAccess(isAuthenticated);
+  
+  // Only fetch profile after initialization completes
+  const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile(!isInitializing);
+  const entitlement = useEntitlement();
+
+  const showProfileSetup = isAuthenticated && !isInitializing && !profileLoading && isFetched && userProfile === null;
+
+  // Build tabs based on entitlement - Admin Panel always visible when authenticated
+  const allTabs = [
+    { id: 'journal' as TabType, label: 'Journal', icon: BookOpen, enabled: entitlement.hasJournal },
+    { id: 'calculator' as TabType, label: 'Calculator', icon: Calculator, enabled: entitlement.hasCalculator },
+    { id: 'mistakes' as TabType, label: 'Mistakes', icon: AlertTriangle, enabled: entitlement.hasMistakes },
+    { id: 'profile' as TabType, label: 'Profile', icon: User, enabled: true },
+    { id: 'admin' as TabType, label: 'Admin', icon: Shield, enabled: isAuthenticated },
+  ];
+
+  const tabs = allTabs.filter(tab => tab.enabled);
+
+  // Redirect to profile if current tab is not enabled
+  useEffect(() => {
+    const currentTabEnabled = allTabs.find(tab => tab.id === activeTab)?.enabled;
+    if (!currentTabEnabled) {
+      setActiveTab('profile');
+    }
+  }, [entitlement, activeTab, isAuthenticated]);
+
+  // Show initializing state after login
+  if (isAuthenticated && isInitializing) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col">
+        <Toaster />
+        
+        {/* Header */}
+        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img 
+                src={LOGO_PATH} 
+                alt={`${APP_NAME} logo`}
+                className="w-10 h-10 object-contain"
+              />
+              <div>
+                <h1 className="text-xl font-bold tracking-tight">{APP_NAME}</h1>
+                <p className="text-xs text-muted-foreground">{APP_TAGLINE}</p>
+              </div>
+            </div>
+            <LoginButton />
+          </div>
+        </header>
+
+        {/* Initializing State */}
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="max-w-md w-full text-center space-y-6">
+            <img 
+              src={LOGO_PATH} 
+              alt={`${APP_NAME} logo`}
+              className="w-20 h-20 mx-auto object-contain animate-pulse"
+            />
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">Setting up your account...</h2>
+              <p className="text-muted-foreground">
+                Initializing your user access. This will only take a moment.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Show error if initialization failed
+  if (initError) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col">
+        <Toaster />
+        
+        {/* Header */}
+        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img 
+                src={LOGO_PATH} 
+                alt={`${APP_NAME} logo`}
+                className="w-10 h-10 object-contain"
+              />
+              <div>
+                <h1 className="text-xl font-bold tracking-tight">{APP_NAME}</h1>
+                <p className="text-xs text-muted-foreground">{APP_TAGLINE}</p>
+              </div>
+            </div>
+            <LoginButton />
+          </div>
+        </header>
+
+        {/* Error State */}
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="max-w-md w-full space-y-6 text-center">
+            <div className="w-20 h-20 mx-auto rounded-2xl bg-destructive/10 flex items-center justify-center">
+              <Lock className="w-10 h-10 text-destructive" />
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">Initialization Failed</h2>
+              <p className="text-muted-foreground">
+                Failed to initialize your user access. Please try logging out and logging in again.
+              </p>
+            </div>
+
+            <Button onClick={() => window.location.reload()} className="w-full" size="lg">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Page
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Main app UI
+  return (
+    <div className="min-h-screen bg-background text-foreground flex flex-col app-shell">
+      <Toaster />
       {showProfileSetup && <ProfileSetupDialog />}
 
       {/* Header */}
@@ -243,78 +388,30 @@ export default function App() {
         </div>
       </header>
 
-      {/* Navigation Tabs */}
-      {isAuthenticated && (
-        <nav className="border-b border-border bg-card/30 backdrop-blur-sm sticky top-[73px] z-30">
-          <div className="container mx-auto px-4">
-            <div className="flex gap-1 overflow-x-auto">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`
-                      flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap
-                      border-b-2 -mb-px
-                      ${isActive 
-                        ? 'border-primary text-primary' 
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                      }
-                    `}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </nav>
-      )}
-
-      {/* Main Content */}
-      <main className="flex-1">
-        {!isAuthenticated ? (
-          <div className="container mx-auto px-4 py-16 text-center space-y-6">
-            <img 
-              src={LOGO_PATH} 
-              alt={`${APP_NAME} logo`}
-              className="w-24 h-24 mx-auto object-contain"
-            />
-            <div className="space-y-2">
-              <h2 className="text-3xl font-bold">{APP_NAME}</h2>
-              <p className="text-xl text-muted-foreground">{APP_TAGLINE}</p>
-            </div>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Please log in to access your trading journal, risk calculator, and mistake tracking features.
-            </p>
-            <div className="pt-4">
-              <LoginButton />
-            </div>
-          </div>
-        ) : (
-          <>
-            {activeTab === 'journal' && <JournalTab />}
-            {activeTab === 'calculator' && <RiskCalculatorTab />}
-            {activeTab === 'mistakes' && <MistakesTab />}
-            {activeTab === 'profile' && <ProfileTab />}
-            {activeTab === 'admin' && <AdminPanelTab />}
-          </>
-        )}
+      {/* Main Content - with key prop to force remount on tab change */}
+      <main className="flex-1 bg-background app-content">
+        <div key={activeTab} className="w-full h-full">
+          {activeTab === 'journal' && <JournalTab />}
+          {activeTab === 'calculator' && <RiskCalculatorTab />}
+          {activeTab === 'mistakes' && <MistakesTab />}
+          {activeTab === 'profile' && <ProfileTab />}
+          {activeTab === 'admin' && <AdminPanelTab />}
+        </div>
       </main>
 
+      {/* Bottom Navigation */}
+      <BottomNav tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+
       {/* Footer */}
-      <footer className="border-t border-border bg-card/30 backdrop-blur-sm py-6 mt-auto">
+      <footer className="border-t border-border bg-card/50 backdrop-blur-sm py-6 app-footer">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>
-            © 2026. Built with ❤️ using{' '}
-            <a 
-              href="https://caffeine.ai" 
-              target="_blank" 
+            © {new Date().getFullYear()}. Built with ❤️ using{' '}
+            <a
+              href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
+              target="_blank"
               rel="noopener noreferrer"
-              className="text-primary hover:underline"
+              className="hover:text-primary transition-colors"
             >
               caffeine.ai
             </a>

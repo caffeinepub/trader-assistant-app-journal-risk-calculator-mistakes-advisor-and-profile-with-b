@@ -1,67 +1,98 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T09:06:52.121Z",
+  "generatedAt": "2026-02-10T16:27:47.828Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 5,
+    "implemented": 5,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Add a Light/Dark theme option in the Profile tab UI that lets the user switch the app theme between light and dark.",
+        "summary": "Rebuild the application and ensure it deploys successfully (no build/runtime errors) after the previous draft expiry/generation failure.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/tabs/ProfileTab.tsx",
-          "frontend/src/hooks/useTheme.ts"
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/tabs/ProfileTab.tsx",
-          "frontend/src/hooks/useTheme.ts"
+          "frontend/src/App.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Persist the selected theme on the client and restore it on app load, so the user’s choice remains after refresh/reopen.",
+        "summary": "Fix the UI overlap/visibility issue when opening options/menus so that popovers, dropdowns, and other option panels are always fully visible and not covered by fixed UI (e.g., bottom navigation) on mobile and desktop.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useTheme.ts",
-          "frontend/index.html"
+          "frontend/src/index.css",
+          "frontend/src/components/navigation/BottomNav.tsx",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useTheme.ts",
-          "frontend/index.html"
+          "frontend/src/index.css",
+          "frontend/src/components/navigation/BottomNav.tsx",
+          "frontend/src/App.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Remove the current runtime enforcement of dark mode so that selecting Light theme is not overridden, and ensure native browser UI color-scheme follows the selected theme.",
+        "summary": "Update the app UI with a cohesive refreshed visual theme (colors, typography, spacing, surfaces) and apply it consistently across the header, tabs, forms, tables, dialogs, and admin screens. Use a distinct gold/charcoal theme inspired by the provided logo screenshot (avoid default blue/purple styling).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/hooks/useTheme.ts",
+          "frontend/src/index.css",
+          "frontend/tailwind.config.js"
+        ],
+        "matchedFiles": [
+          "frontend/src/index.css",
+          "frontend/tailwind.config.js"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Replace/update the application logo using the uploaded image as the visual reference. Update the app branding so the header and loading/connecting states display the new logo asset.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/lib/branding.ts",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/lib/branding.ts",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Add the newly generated logo image(s) as static assets in `frontend/public/assets/generated` and ensure the UI references them directly (do not proxy images through the backend).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/public/assets/generated/app-logo-yug-v2.dim_1024x1024.png",
+          "frontend/public/assets/generated/app-icon-yug-v2.dim_512x512.png",
           "frontend/index.html"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/hooks/useTheme.ts",
+          "frontend/public/assets/generated/app-logo-yug-v2.dim_1024x1024.png",
+          "frontend/public/assets/generated/app-icon-yug-v2.dim_512x512.png",
           "frontend/index.html"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/index.html",
+    "frontend/public/assets/generated/app-icon-yug-v2.dim_512x512.png",
+    "frontend/public/assets/generated/app-logo-yug-v2.dim_1024x1024.png",
     "frontend/src/App.tsx",
-    "frontend/src/hooks/useTheme.ts",
-    "frontend/src/tabs/ProfileTab.tsx",
+    "frontend/src/components/navigation/BottomNav.tsx",
+    "frontend/src/index.css",
+    "frontend/src/lib/branding.ts",
+    "frontend/tailwind.config.js",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

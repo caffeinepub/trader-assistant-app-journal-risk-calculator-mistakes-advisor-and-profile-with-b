@@ -2,31 +2,85 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/assets/generated/favicon-yug.dim_32x32.png" />
-    <link rel="apple-touch-icon" href="/assets/generated/apple-touch-icon-yug.dim_180x180.png" />
+    <link rel="icon" type="image/png" href="/assets/generated/app-icon-yug-v2.dim_512x512.png" />
+    <link rel="apple-touch-icon" href="/assets/generated/app-icon-yug-v2.dim_512x512.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Yug Trading Journal</title>
+    <meta name="description" content="Yug Trade Journal - Professional Trading Assistant for tracking trades, managing risk, and learning from mistakes" />
+    <title>Yug Trade Journal - Professional Trading Assistant</title>
+    
+    <!-- Google Fonts - Montserrat for distinctive typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Early theme initialization to prevent flash -->
     <script>
       (function() {
         try {
-          const stored = localStorage.getItem('app-theme');
-          const theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
-          if (theme === 'dark') {
+          const theme = localStorage.getItem('app-theme');
+          const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const shouldBeDark = theme === 'dark' || (!theme && systemPrefersDark);
+          
+          if (shouldBeDark) {
             document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.style.colorScheme = 'light';
           }
-          document.documentElement.style.colorScheme = theme;
         } catch (e) {
-          // Fallback to dark if localStorage fails
-          document.documentElement.classList.add('dark');
-          document.documentElement.style.colorScheme = 'dark';
+          console.error('Theme initialization error:', e);
+        }
+      })();
+    </script>
+
+    <!-- Runtime environment loader - loads backend canister ID before app starts -->
+    <script>
+      (function() {
+        // Resilient env loader: fetch /env.json and inject window.BACKEND_CANISTER_ID
+        // If the file is missing or unreadable, continue loading the app (no hard crash)
+        
+        function loadEnvAndStartApp() {
+          fetch('/env.json')
+            .then(function(response) {
+              if (!response.ok) {
+                console.warn('env.json not found or not readable, continuing without runtime config');
+                return null;
+              }
+              return response.json();
+            })
+            .then(function(envData) {
+              if (envData && envData.BACKEND_CANISTER_ID) {
+                window.BACKEND_CANISTER_ID = envData.BACKEND_CANISTER_ID;
+                window.__CANISTER_ID_SOURCE__ = 'env.json';
+                console.log('Backend canister ID loaded from env.json:', envData.BACKEND_CANISTER_ID);
+              } else {
+                console.warn('env.json exists but does not contain BACKEND_CANISTER_ID');
+              }
+            })
+            .catch(function(error) {
+              console.warn('Failed to load env.json:', error.message);
+            })
+            .finally(function() {
+              // Always load the app, even if env.json fails
+              var script = document.createElement('script');
+              script.type = 'module';
+              script.src = '/src/main.tsx';
+              document.body.appendChild(script);
+            });
+        }
+
+        // Start the env loader when DOM is ready
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', loadEnvAndStartApp);
+        } else {
+          loadEnvAndStartApp();
         }
       })();
     </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <!-- App script is loaded dynamically by the env loader above -->
   </body>
 </html>

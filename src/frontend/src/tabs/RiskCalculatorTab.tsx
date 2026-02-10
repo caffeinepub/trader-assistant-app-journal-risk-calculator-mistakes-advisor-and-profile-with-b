@@ -43,14 +43,13 @@ export default function RiskCalculatorTab() {
       : parseFloat(riskFixed || '0');
 
   const result = calculateLotSize(riskUSD, parseFloat(slPips || '0'), effectivePipValue);
-  const units = result.lotSize * 100000; // 1 lot = 100,000 units
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Calculator className="w-5 h-5 text-blue-500" />
+            <Calculator className="w-5 h-5 text-primary" />
             Risk Management Calculator
           </CardTitle>
           <CardDescription>Calculate optimal lot size based on your risk parameters</CardDescription>
@@ -88,8 +87,8 @@ export default function RiskCalculatorTab() {
                   }}
                   className={`px-4 py-2 rounded-lg border transition-colors ${
                     accountSize === preset && !customAccountSize
-                      ? 'bg-blue-500 text-white border-blue-500'
-                      : 'border-border hover:border-blue-500'
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'border-border hover:border-primary'
                   }`}
                 >
                   ${preset.toLocaleString()}
@@ -148,10 +147,10 @@ export default function RiskCalculatorTab() {
           <div className="space-y-2">
             <Label htmlFor="pair">Trading Pair</Label>
             <Select value={tradingPair} onValueChange={setTradingPair}>
-              <SelectTrigger id="pair">
+              <SelectTrigger id="pair" className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[300px]">
                 {CALCULATOR_TRADING_PAIRS.map((pair) => (
                   <SelectItem key={pair.value} value={pair.value}>
                     {pair.label}
@@ -195,14 +194,14 @@ export default function RiskCalculatorTab() {
           </div>
 
           {/* Results */}
-          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-blue-500" />
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-blue-500">Calculated Results</h3>
+                  <h3 className="text-lg font-semibold text-primary">Calculated Results</h3>
                   <p className="text-sm text-muted-foreground">Optimal position sizing</p>
                 </div>
               </div>
@@ -213,11 +212,7 @@ export default function RiskCalculatorTab() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Lot Size:</span>
-                  <span className="text-2xl font-bold text-blue-500">{result.lotSize.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Units:</span>
-                  <span className="text-lg font-semibold">{units.toLocaleString()}</span>
+                  <span className="text-2xl font-bold text-primary">{result.lotSize.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>

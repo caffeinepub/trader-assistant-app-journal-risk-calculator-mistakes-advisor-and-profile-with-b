@@ -116,6 +116,8 @@ export interface backendInterface {
     createUserProfile(fullName: string, username: string): Promise<UserProfile>;
     deleteMistakeEntry(mistakeId: bigint): Promise<void>;
     deleteTradeEntry(index: bigint): Promise<void>;
+    ensureHasUserAndGetPaymentQRCode(): Promise<ExternalBlob | null>;
+    ensureHasUserAndGetSubscriptionState(): Promise<SubscriptionState | null>;
     findUserById(targetId: bigint): Promise<[Principal, UserProfile] | null>;
     getActiveDiscounts(): Promise<Array<Discount>>;
     getAllMistakes(): Promise<Array<MistakeEntry>>;
@@ -146,8 +148,6 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getDailyProfitForDate(date: Time): Promise<number>;
     getEnabledPaymentMethods(): Promise<Array<PaymentMethod>>;
-    getPaymentQRCode(): Promise<ExternalBlob | null>;
-    getSubscriptionState(): Promise<SubscriptionState | null>;
     getTradesByDateRange(startDate: Time, endDate: Time): Promise<Array<TradeEntry>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     grantAdminRole(target: Principal): Promise<void>;

@@ -12,8 +12,6 @@ import AccessControl "authorization/access-control";
 import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
 
-
-
 actor {
   include MixinStorage();
 
@@ -141,11 +139,14 @@ actor {
     paymentQRCode := null;
   };
 
-  public query ({ caller }) func getPaymentQRCode() : async ?Storage.ExternalBlob {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can view the payment QR code");
-    };
+  // Public endpoint - accessible to guests considering subscription
+  public query func ensureHasUserAndGetPaymentQRCode() : async ?Storage.ExternalBlob {
     paymentQRCode;
+  };
+
+  // Public endpoint - accessible to guests considering subscription
+  public query ({ caller }) func ensureHasUserAndGetSubscriptionState() : async ?SubscriptionState {
+    subscriptions.get(caller);
   };
 
   // Helper function to check if caller is authorized as admin (permanent or temporary)
@@ -512,10 +513,10 @@ actor {
 
   // ============ USER PROFILE FUNCTIONS ============
 
-  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view profiles");
-    };
+  // Changed from query to shared to allow auto-granting #user role
+  public shared ({ caller }) func getCallerUserProfile() : async ?UserProfile {
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
     userProfiles.get(caller);
   };
 
@@ -527,16 +528,14 @@ actor {
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
     userProfiles.add(caller, profile);
   };
 
   public shared ({ caller }) func createUserProfile(fullName : Text, username : Text) : async UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can create profiles");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     switch (userProfiles.get(caller)) {
       case (null) {
@@ -621,9 +620,8 @@ actor {
     description : Text,
     tradeDate : Time.Time
   ) : async MistakeEntry {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can create mistake entries");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Mistakes tracking requires Pro or Premium plan (or active trial)
     if (not hasProAccess(caller)) {
@@ -659,10 +657,9 @@ actor {
     newMistake;
   };
 
-  public query ({ caller }) func getAllMistakes() : async [MistakeEntry] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view mistake entries");
-    };
+  public shared ({ caller }) func getAllMistakes() : async [MistakeEntry] {
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Mistakes tracking requires Pro or Premium plan (or active trial)
     if (not hasProAccess(caller)) {
@@ -676,9 +673,8 @@ actor {
   };
 
   public shared ({ caller }) func updateMistakeEntry(mistakeId : Nat, description : Text) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can update mistake entries");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Mistakes tracking requires Pro or Premium plan (or active trial)
     if (not hasProAccess(caller)) {
@@ -719,9 +715,8 @@ actor {
   };
 
   public shared ({ caller }) func deleteMistakeEntry(mistakeId : Nat) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can delete mistake entries");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Mistakes tracking requires Pro or Premium plan (or active trial)
     if (not hasProAccess(caller)) {
@@ -764,9 +759,8 @@ actor {
     riskAmount : Float,
     outcome : Bool
   ) : async TradeEntry {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can create trade entries");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Trade journal requires at least Basic plan (or active trial)
     if (not hasBasicAccess(caller)) {
@@ -798,10 +792,9 @@ actor {
     newTrade;
   };
 
-  public query ({ caller }) func getAllTrades() : async [TradeEntry] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view trade entries");
-    };
+  public shared ({ caller }) func getAllTrades() : async [TradeEntry] {
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Trade journal requires at least Basic plan (or active trial)
     if (not hasBasicAccess(caller)) {
@@ -815,9 +808,8 @@ actor {
   };
 
   public shared ({ caller }) func updateTradeEntry(index : Nat, entry : TradeEntry) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can update trade entries");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Trade journal requires at least Basic plan (or active trial)
     if (not hasBasicAccess(caller)) {
@@ -851,9 +843,8 @@ actor {
   };
 
   public shared ({ caller }) func deleteTradeEntry(index : Nat) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can delete trade entries");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Trade journal requires at least Basic plan (or active trial)
     if (not hasBasicAccess(caller)) {
@@ -898,10 +889,9 @@ actor {
     timestamp / 86400_000_000_000;
   };
 
-  public query ({ caller }) func getDailyProfitForDate(date : Time.Time) : async Float {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view analytics");
-    };
+  public shared ({ caller }) func getDailyProfitForDate(date : Time.Time) : async Float {
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Analytics requires Premium plan (or active trial)
     if (not hasPremiumAccess(caller)) {
@@ -925,10 +915,9 @@ actor {
     };
   };
 
-  public query ({ caller }) func getTradesByDateRange(startDate : Time.Time, endDate : Time.Time) : async [TradeEntry] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view trade entries");
-    };
+  public shared ({ caller }) func getTradesByDateRange(startDate : Time.Time, endDate : Time.Time) : async [TradeEntry] {
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Analytics requires Premium plan (or active trial)
     if (not hasPremiumAccess(caller)) {
@@ -951,7 +940,7 @@ actor {
     };
   };
 
-  public query ({ caller }) func getAnalytics(startDate : ?Time.Time, endDate : ?Time.Time) : async {
+  public shared ({ caller }) func getAnalytics(startDate : ?Time.Time, endDate : ?Time.Time) : async {
     totalTrades : Nat;
     winningTrades : Nat;
     losingTrades : Nat;
@@ -960,9 +949,8 @@ actor {
     grossProfit : Float;
     grossLoss : Float;
   } {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view analytics");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Analytics requires Premium plan (or active trial)
     if (not hasPremiumAccess(caller)) {
@@ -1031,10 +1019,9 @@ actor {
     };
   };
 
-  public query ({ caller }) func getAllTradeDates() : async [Time.Time] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view trade dates");
-    };
+  public shared ({ caller }) func getAllTradeDates() : async [Time.Time] {
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Analytics requires Premium plan (or active trial)
     if (not hasPremiumAccess(caller)) {
@@ -1056,15 +1043,6 @@ actor {
     };
   };
 
-  // ============ SUBSCRIPTION FUNCTIONS ============
-
-  public query ({ caller }) func getSubscriptionState() : async ?SubscriptionState {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view subscription states");
-    };
-    subscriptions.get(caller);
-  };
-
   public shared ({ caller }) func submitPaymentForSubscription(
     plan : SubscriptionPlan,
     couponCode : ?Text,
@@ -1075,9 +1053,8 @@ actor {
     fileSize : Nat,
     paymentProof : [Nat8]
   ) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can submit payments");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Validate that payment file is PDF and less than 8MB (size is checked in frontend)
     if (not fileType.contains(#text "pdf")) {
@@ -1185,9 +1162,8 @@ actor {
   };
 
   public shared ({ caller }) func cancelTrial() : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can cancel trials");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     switch (subscriptions.get(caller)) {
       case (null) {
@@ -1224,14 +1200,13 @@ actor {
     };
   };
 
-  public query ({ caller }) func getCallerPlan() : async ?{
+  public shared ({ caller }) func getCallerPlan() : async ?{
     #trial;
     #paid : SubscriptionPlan;
     #expired;
   } {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view subscription plans");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     switch (subscriptions.get(caller)) {
       case (null) { null };
@@ -1269,10 +1244,9 @@ actor {
     );
   };
 
-  public query ({ caller }) func isLockedAdmin() : async Bool {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can check admin lock status");
-    };
+  public shared ({ caller }) func isLockedAdmin() : async Bool {
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     switch (lockedAdmins.get(caller)) {
       case (?expireTime) {
@@ -1283,9 +1257,8 @@ actor {
   };
 
   public shared ({ caller }) func unlockAdmin(password : Text) : async Bool {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can unlock admin access");
-    };
+    autoGrantUserRole(caller);
+    assertUserRole(caller);
 
     // Validate password
     if (password != adminUnlockPassword) {
@@ -1309,6 +1282,21 @@ actor {
     };
 
     adminUnlockPassword := newPassword;
+  };
+
+  /// Utility function to auto-grant #user role if not already assigned.
+  private func autoGrantUserRole(caller : Principal) {
+    if (caller.isAnonymous()) { return };
+    switch (AccessControl.getUserRole(accessControlState, caller)) {
+      case (#guest) { AccessControl.assignRole(accessControlState, caller, caller, #user) };
+      case (_) {};
+    };
+  };
+
+  private func assertUserRole(caller : Principal) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Only authenticated users can perform this action");
+    };
   };
 };
 

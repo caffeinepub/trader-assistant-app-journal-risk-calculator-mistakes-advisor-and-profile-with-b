@@ -37,21 +37,21 @@ export default function JournalAnalyticsHeader({ analytics }: Props) {
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
-      <Card className="border-l-4 border-l-blue-500">
+      <Card className="border-l-4 border-l-primary">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Trades</p>
               <p className="text-3xl font-bold mt-2">{totalTradesNum}</p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-blue-500" />
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-primary" />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-l-4 border-l-green-500">
+      <Card className="border-l-4 border-l-primary">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -61,8 +61,8 @@ export default function JournalAnalyticsHeader({ analytics }: Props) {
                 {Number(analytics.winningTrades)}W / {Number(analytics.losingTrades)}L
               </p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
-              <Target className="w-6 h-6 text-green-500" />
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Target className="w-6 h-6 text-primary" />
             </div>
           </div>
         </CardContent>

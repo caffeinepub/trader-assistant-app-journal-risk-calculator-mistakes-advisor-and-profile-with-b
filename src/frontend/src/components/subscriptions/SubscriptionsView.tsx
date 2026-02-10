@@ -1,218 +1,199 @@
 import { useState } from 'react';
-import { useGetSubscriptionState, useSelectSubscriptionPlan, useCancelTrial } from '../../hooks/useQueries';
-import { useEntitlement } from '../../hooks/useEntitlement';
+import { useGetSubscriptionState, useCancelTrial } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Check, CreditCard, Sparkles, Clock, AlertCircle, XCircle } from 'lucide-react';
-import { SubscriptionPlan } from '../../backend';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CheckCircle2, Clock, XCircle, Sparkles } from 'lucide-react';
 import PaymentView from './PaymentView';
+import { SubscriptionPlan } from '../../backend';
 
 export default function SubscriptionsView() {
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const { data: subscriptionState } = useGetSubscriptionState();
-  const entitlement = useEntitlement();
-  const selectPlan = useSelectSubscriptionPlan();
+  const { data: subscriptionState, isLoading } = useGetSubscriptionState();
   const cancelTrial = useCancelTrial();
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
 
-  const handleSelectPlan = (plan: SubscriptionPlan) => {
-    selectPlan.mutate(plan, {
-      onSuccess: () => {
-        setSelectedPlan(plan);
-      },
-    });
-  };
-
-  const handleBackToPlans = () => {
-    setSelectedPlan(null);
-  };
-
-  const handleCancelTrial = () => {
-    cancelTrial.mutate(undefined, {
-      onSuccess: () => {
-        setShowCancelDialog(false);
-      },
-    });
-  };
-
-  if (selectedPlan) {
-    return <PaymentView plan={selectedPlan} onBack={handleBackToPlans} />;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading subscription details...</p>
+        </div>
+      </div>
+    );
   }
+
+  if (!subscriptionState) {
+    return (
+      <Alert variant="destructive">
+        <XCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          Unable to load subscription information. Please try again later.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  // Show payment view if a plan is selected
+  if (selectedPlan) {
+    return <PaymentView plan={selectedPlan} onBack={() => setSelectedPlan(null)} />;
+  }
+
+  const now = Date.now() * 1_000_000; // Convert to nanoseconds
+  const trialActive = subscriptionState.trialActive && (now - Number(subscriptionState.trialStart) < 172_800_000_000_000);
+  const trialTimeLeft = trialActive
+    ? Math.max(0, 172_800_000_000_000 - (now - Number(subscriptionState.trialStart)))
+    : 0;
+  const trialHoursLeft = Math.floor(trialTimeLeft / (3_600_000_000_000));
+
+  const hasPaidPlan = subscriptionState.plan && subscriptionState.paidStart;
+  const paidExpired = hasPaidPlan && (now - Number(subscriptionState.paidStart) >= 2_678_400_000_000_000);
+
+  const getPlanName = (plan: SubscriptionPlan) => {
+    switch (plan) {
+      case SubscriptionPlan.basic:
+        return 'Basic';
+      case SubscriptionPlan.pro:
+        return 'Pro';
+      case SubscriptionPlan.premium:
+        return 'Premium';
+      default:
+        return 'Unknown';
+    }
+  };
 
   const plans = [
     {
-      name: 'Basic Plan',
+      id: SubscriptionPlan.basic,
+      name: 'Basic',
       price: 299,
-      plan: SubscriptionPlan.basic,
-      features: ['Journal Your Trades', 'Track Performance', 'View Analytics'],
-      color: 'bg-emerald-50 border-emerald-200',
-      badge: 'Basic',
-      validity: '31 days',
+      features: ['Trade Journal', 'Basic Analytics', 'Trade History'],
+      color: 'from-emerald-500 to-teal-600',
+      recommended: false,
     },
     {
-      name: 'Pro Plan',
+      id: SubscriptionPlan.pro,
+      name: 'Pro',
       price: 799,
-      plan: SubscriptionPlan.pro,
-      features: ['Journal Your Trades', 'Lot Size Calculator', 'Risk Management Tools', 'Advanced Analytics'],
-      color: 'bg-amber-50 border-amber-200',
-      badge: 'Pro',
-      popular: true,
-      validity: '31 days',
+      features: ['Everything in Basic', 'Mistakes Tracking', 'AI Suggestions', 'Advanced Analytics'],
+      color: 'from-amber-500 to-orange-600',
+      recommended: true,
     },
     {
-      name: 'Premium Plan',
+      id: SubscriptionPlan.premium,
+      name: 'Premium',
       price: 999,
-      plan: SubscriptionPlan.premium,
-      features: [
-        'Journal Your Trades',
-        'Lot Size Calculator',
-        'Mistakes Tracker',
-        'AI-Powered Suggestions',
-        'Full Analytics Suite',
-      ],
-      color: 'bg-gradient-to-br from-emerald-50 to-amber-50 border-emerald-300',
-      badge: 'Premium',
-      validity: '31 days',
+      features: ['Everything in Pro', 'Risk Calculator', 'Priority Support', 'Custom Reports'],
+      color: 'from-purple-500 to-pink-600',
+      recommended: false,
     },
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl space-y-8">
-      {/* Current Plan Status */}
-      <Card className={entitlement.isTrial ? 'border-green-500 bg-green-50/50' : entitlement.isExpired ? 'border-orange-500 bg-orange-50/50' : ''}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-emerald-600" />
-                Your Subscription
-              </CardTitle>
-              <CardDescription>Current plan and features</CardDescription>
-            </div>
-            {entitlement.isTrial && (
-              <Badge className="bg-green-600">
-                <Sparkles className="w-3 h-3 mr-1" />
-                Trial Active
-              </Badge>
-            )}
-            {entitlement.isExpired && (
-              <Badge variant="destructive">
-                <Clock className="w-3 h-3 mr-1" />
-                Expired
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-lg font-semibold">{entitlement.planName}</p>
-              <p className="text-sm text-muted-foreground">
-                {entitlement.isTrial 
-                  ? 'All features unlocked for 2 days from profile creation' 
-                  : entitlement.isExpired
-                  ? 'Your trial has expired. Please select a plan to continue.'
-                  : entitlement.isLoading 
-                  ? 'Loading subscription status...' 
-                  : 'Active subscription (31 days from purchase)'}
-              </p>
-            </div>
-          </div>
-
-          {entitlement.isTrial && (
-            <>
-              <Alert className="bg-green-50 border-green-200">
-                <Sparkles className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  You're currently on a 2-day free trial with access to all features. Submit payment for admin approval to continue after trial.
-                </AlertDescription>
-              </Alert>
+    <div className="space-y-6">
+      {/* Trial Status */}
+      {trialActive && (
+        <Alert className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 border-emerald-200 dark:border-emerald-900">
+          <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+          <AlertTitle className="text-emerald-900 dark:text-emerald-100">2-Day Free Trial Active</AlertTitle>
+          <AlertDescription className="text-emerald-800 dark:text-emerald-200">
+            You have {trialHoursLeft} hours remaining in your free trial. Enjoy full access to all features!
+            <div className="mt-2">
               <Button
-                variant="outline"
-                className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-                onClick={() => setShowCancelDialog(true)}
+                onClick={() => cancelTrial.mutate()}
                 disabled={cancelTrial.isPending}
+                variant="outline"
+                size="sm"
+                className="border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
               >
-                <XCircle className="w-4 h-4 mr-2" />
                 {cancelTrial.isPending ? 'Cancelling...' : 'Cancel Trial'}
               </Button>
-            </>
-          )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
-          {entitlement.isExpired && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Your trial has expired. Please select a plan below and submit payment for admin approval.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+      {/* Paid Plan Status */}
+      {hasPaidPlan && !paidExpired && (
+        <Alert className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 border-emerald-200 dark:border-emerald-900">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+          <AlertTitle className="text-emerald-900 dark:text-emerald-100">Active Subscription</AlertTitle>
+          <AlertDescription className="text-emerald-800 dark:text-emerald-200">
+            Your {subscriptionState.plan ? getPlanName(subscriptionState.plan) : 'subscription'} plan is active until{' '}
+            {new Date(Number(subscriptionState.paidStart) / 1_000_000 + 31 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+          </AlertDescription>
+        </Alert>
+      )}
 
-      <Separator />
+      {/* Expired Status */}
+      {!trialActive && (!hasPaidPlan || paidExpired) && (
+        <Alert className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-900">
+          <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertTitle className="text-amber-900 dark:text-amber-100">Subscription Expired</AlertTitle>
+          <AlertDescription className="text-amber-800 dark:text-amber-200">
+            Your subscription has expired. Choose a plan below to continue using the app.
+          </AlertDescription>
+        </Alert>
+      )}
 
-      {/* Subscription Plans */}
-      <div>
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold mb-2">Choose Your Plan</h2>
+      {/* Plan Selection */}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold">Choose Your Plan</h2>
           <p className="text-muted-foreground">
-            {entitlement.isTrial 
-              ? 'Submit payment anytime during your trial for admin approval' 
-              : 'Select a plan and submit payment for admin approval'}
+            Select a subscription plan to continue using Yug Trade Journal
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {plans.map((planOption) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {plans.map((plan) => (
             <Card
-              key={planOption.plan}
-              className={`relative ${planOption.color} border-2 transition-all hover:shadow-lg`}
+              key={plan.name}
+              className={`relative overflow-hidden transition-all hover:shadow-lg ${
+                plan.recommended ? 'border-2 border-primary' : ''
+              }`}
             >
-              {planOption.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-emerald-600">Most Popular</Badge>
+              {plan.recommended && (
+                <div className="absolute top-0 right-0">
+                  <Badge className="rounded-none rounded-bl-lg bg-gradient-to-r from-amber-500 to-orange-600 border-0">
+                    Recommended
+                  </Badge>
                 </div>
               )}
+
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <Badge variant="outline">{planOption.badge}</Badge>
-                  <span className="text-xs text-muted-foreground">{planOption.validity}</span>
+                <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4`}>
+                  <Sparkles className="w-6 h-6 text-white" />
                 </div>
-                <CardTitle className="text-2xl mt-2">{planOption.name}</CardTitle>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">₹{planOption.price}</span>
+                <CardTitle>{plan.name}</CardTitle>
+                <CardDescription>
+                  <span className="text-3xl font-bold text-foreground">₹{plan.price}</span>
                   <span className="text-muted-foreground">/month</span>
-                </div>
+                </CardDescription>
               </CardHeader>
+
               <CardContent className="space-y-4">
                 <ul className="space-y-2">
-                  {planOption.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
                       <span className="text-sm">{feature}</span>
                     </li>
                   ))}
                 </ul>
+
                 <Button
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => handleSelectPlan(planOption.plan)}
-                  disabled={selectPlan.isPending}
+                  onClick={() => setSelectedPlan(plan.id)}
+                  className={`w-full ${
+                    plan.recommended
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700'
+                      : ''
+                  }`}
+                  variant={plan.recommended ? 'default' : 'outline'}
                 >
-                  {selectPlan.isPending ? 'Selecting...' : 'Select Plan'}
+                  Select Plan
                 </Button>
               </CardContent>
             </Card>
@@ -220,27 +201,12 @@ export default function SubscriptionsView() {
         </div>
       </div>
 
-      {/* Cancel Trial Confirmation Dialog */}
-      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Free Trial?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to cancel your 2-day free trial? You will immediately lose access to all features until you purchase a subscription plan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={cancelTrial.isPending}>Keep Trial</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleCancelTrial}
-              disabled={cancelTrial.isPending}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {cancelTrial.isPending ? 'Cancelling...' : 'Cancel Trial'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Admin Approval Notice */}
+      <Alert>
+        <AlertDescription>
+          <strong>Note:</strong> After submitting your payment, an admin will review and approve your subscription. You will receive access once approved.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }

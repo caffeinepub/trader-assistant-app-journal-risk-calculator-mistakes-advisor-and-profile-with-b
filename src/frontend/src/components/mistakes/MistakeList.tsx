@@ -75,19 +75,19 @@ export default function MistakeList({ mistakes, isLoading }: Props) {
           {mistakes.map((mistake) => (
             <Card key={Number(mistake.id)} className="border-l-4 border-l-blue-500">
               <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-3">
+                <div className="flex flex-col sm:flex-row items-start gap-4">
+                  <div className="flex-1 min-w-0 space-y-3 w-full">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline">{getCategoryLabel(mistake.category)}</Badge>
                       <span className="text-sm text-muted-foreground">{formatDate(mistake.tradeDate)}</span>
                     </div>
-                    <p className="text-sm">{mistake.description}</p>
+                    <p className="text-sm break-words">{mistake.description}</p>
                     <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
                       <div className="flex items-start gap-2">
                         <Lightbulb className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-blue-500 mb-1">AI Suggestion</p>
-                          <p className="text-sm text-foreground/90">{mistake.suggestion.suggestion}</p>
+                          <p className="text-sm text-foreground/90 break-words overflow-wrap-anywhere">{mistake.suggestion.suggestion}</p>
                         </div>
                       </div>
                     </div>
@@ -96,6 +96,7 @@ export default function MistakeList({ mistakes, isLoading }: Props) {
                     variant="ghost"
                     size="sm"
                     onClick={() => setEditingMistake(mistake)}
+                    className="shrink-0"
                   >
                     <Edit2 className="w-4 h-4" />
                   </Button>

@@ -1,32 +1,52 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "App needs rebuild; UI has overlapping/visibility issues in options menus and user wants UI and logo updated.",
   "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "UI overlap issue: opening other options causes elements to overlap and become unclear/not fully visible.",
+    "Build/generation failure and draft expiry requiring rebuild."
+  ],
+  "isFixRequest": true,
+  "imageRequirements": "## Required Images\n- Square app logo based on the uploaded gold/black trading mark and text (app-logo-yug-v2.dim_1024x1024.png)\n- Square app icon variant derived from the same mark, simplified for small sizes (app-icon-yug-v2.dim_512x512.png)",
   "existing_features": [
     {
-      "id": "feature-add-a-light-dark-theme-option-in-the-profile-tab-ui-that-lets-the-user-switch-the-app-theme-between-light-and-dark",
-      "title": "Add a Light/Dark theme option in the Profile tab UI that lets the user switch the app theme between light and dark.",
+      "id": "feature-rebuild-the-application-and-ensure-it-deploys-successfully-no-build-runtime-errors-after-the-previous-draft-expiry-generation-failure",
+      "title": "Rebuild the application and ensure it deploys successfully (no build/runtime errors) after the previous draft expiry/generation failure.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-persist-the-selected-theme-on-the-client-and-restore-it-on-app-load-so-the-user-s-choice-remains-after-refresh-reopen",
-      "title": "Persist the selected theme on the client and restore it on app load, so the user’s choice remains after refresh/reopen.",
+      "id": "feature-fix-the-ui-overlap-visibility-issue-when-opening-options-menus-so-that-popovers-dropdowns-and-other-option-panels-are-always-fully-visible-and-not-covered-by-fixed-ui-e-g-bottom-navigation-on-mobile-and-desktop",
+      "title": "Fix the UI overlap/visibility issue when opening options/menus so that popovers, dropdowns, and other option panels are always fully visible and not covered by fixed UI (e.g., bottom navigation) on mobile and desktop.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-remove-the-current-runtime-enforcement-of-dark-mode-so-that-selecting-light-theme-is-not-overridden-and-ensure-native-browser-ui-color-scheme-follows-the-selected-theme",
-      "title": "Remove the current runtime enforcement of dark mode so that selecting Light theme is not overridden, and ensure native browser UI color-scheme follows the selected theme.",
+      "id": "feature-update-the-app-ui-with-a-cohesive-refreshed-visual-theme-colors-typography-spacing-surfaces-and-apply-it-consistently-across-the-header-tabs-forms-tables-dialogs-and-admin-screens-use-a-distinct-gold-charcoal-theme-inspired-by-the-provided-logo-screenshot-avoid-default-blue-purple-styling",
+      "title": "Update the app UI with a cohesive refreshed visual theme (colors, typography, spacing, surfaces) and apply it consistently across the header, tabs, forms, tables, dialogs, and admin screens. Use a distinct gold/charcoal theme inspired by the provided logo screenshot (avoid default blue/purple styling).",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-update-the-application-logo-using-the-uploaded-image-as-the-visual-reference-update-the-app-branding-so-the-header-and-loading-connecting-states-display-the-new-logo-asset",
+      "title": "Replace/update the application logo using the uploaded image as the visual reference. Update the app branding so the header and loading/connecting states display the new logo asset.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-the-newly-generated-logo-image-s-as-static-assets-in-frontend-public-assets-generated-and-ensure-the-ui-references-them-directly-do-not-proxy-images-through-the-backend",
+      "title": "Add the newly generated logo image(s) as static assets in `frontend/public/assets/generated` and ensure the UI references them directly (do not proxy images through the backend).",
+      "reqIds": [
+        "REQ-5"
       ],
       "version": 1
     }
@@ -34,12 +54,24 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add light theme and dark theme options in the profile section",
+      "summary": "Fix overlapping/visibility issue when opening options/menus (elements not clearly visible due to overlap).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Update the app UI and replace/update the logo.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Rebuild/regenerate the app after previous generation failure/expiry.",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Add light/dark theme toggle in Profile section",
+  "projectName": "Rebuild app; fix overlapping option menus; refresh UI and update logo",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
