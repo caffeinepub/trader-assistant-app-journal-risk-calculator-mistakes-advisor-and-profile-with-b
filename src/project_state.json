@@ -1,32 +1,85 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App with a lot size calculator; user is requesting a rollback/restore to Version 35 to match older behavior.",
+  "summary": "Project to build/update a lot size (risk management) calculator for trading that supports both funded accounts and personal capital accounts with guided inputs and lot size output.",
   "architectural_notes": [],
-  "known_issues": [
-    "Restore/rollback to Version 35 failed on a previous build attempt (implementation error)."
-  ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-restore-the-deployed-application-codebase-to-match-the-previously-working-version-35-state-full-rollback-so-the-app-behavior-and-ui-match-version-35-rather-than-the-current-version",
-      "title": "Restore the deployed application codebase to match the previously working **Version 35** state (full rollback), so the app behavior and UI match Version 35 rather than the current version.",
+      "id": "feature-update-the-risk-calculator-ui-to-first-ask-the-user-whether-they-trade-a-funded-account-or-own-capital-and-conditionally-render-the-rest-of-the-form-based-on-that-selection",
+      "title": "Update the Risk Calculator UI to first ask the user whether they trade a Funded Account or Own Capital, and conditionally render the rest of the form based on that selection.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-fix-the-restore-rollback-workflow-so-the-version-35-restore-succeeds-the-previous-restore-attempt-failed-ensure-the-build-pipeline-can-complete-a-version-35-restore-without-throwing-an-implementation-error",
-      "title": "Fix the restore/rollback workflow so the Version 35 restore succeeds (the previous restore attempt failed); ensure the build pipeline can complete a Version 35 restore without throwing an implementation error.",
+      "id": "feature-for-the-funded-account-flow-add-an-account-size-selector-with-presets-1k-2k-5k-10k-25k-50k-100k-200k-plus-an-other-option-that-reveals-a-numeric-input-for-a-custom-account-size",
+      "title": "For the Funded Account flow, add an Account Size selector with presets: $1k, $2k, $5k, $10k, $25k, $50k, $100k, $200k, plus an “Other” option that reveals a numeric input for a custom account size.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-for-the-own-capital-flow-add-an-account-size-selector-with-presets-50-100-plus-an-other-option-that-reveals-a-numeric-input-for-a-custom-account-size",
+      "title": "For the Own Capital flow, add an Account Size selector with presets: $50, $100, plus an “Other” option that reveals a numeric input for a custom account size.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-change-the-calculator-inputs-to-use-stop-loss-in-pips-numeric-instead-of-entry-stop-loss-prices-and-update-validation-and-result-display-accordingly",
+      "title": "Change the calculator inputs to use Stop Loss in pips (numeric) instead of entry/stop-loss prices, and update validation and result display accordingly.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-risk-amount-usd-numeric-input-for-both-flows-and-calculate-the-recommended-lot-size-using-lotsize-riskusd-slpips-pipvalueperlotadjusted-reusing-existing-pip-value-lookup-and-lot-size-calculation-utilities-where-possible",
+      "title": "Add a “Risk Amount (USD)” numeric input for both flows and calculate the recommended lot size using: lotSize = riskUSD / (slPips * pipValuePerLotAdjusted), reusing existing pip-value lookup and lot-size calculation utilities where possible.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-keep-the-trading-pair-selection-including-the-current-behavior-that-requires-a-custom-pip-value-for-xauusd-xagusd-and-other-and-ensure-the-funded-own-capital-flow-works-with-this-pair-logic",
+      "title": "Keep the trading pair selection, including the current behavior that requires a custom pip value for XAUUSD, XAGUSD, and OTHER, and ensure the funded/own-capital flow works with this pair logic.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-browser-alert-error-handling-in-the-risk-calculator-with-in-page-validation-feedback-e-g-an-alert-component-area-so-errors-are-shown-within-the-calculator-ui",
+      "title": "Replace browser `alert(...)` error handling in the Risk Calculator with in-page validation feedback (e.g., an Alert component area) so errors are shown within the calculator UI.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-soft-validation-warning-when-risk-amount-usd-exceeds-the-selected-account-size-without-blocking-calculation-user-can-still-calculate",
+      "title": "Add a soft validation warning when Risk Amount (USD) exceeds the selected account size, without blocking calculation (user can still calculate).",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
     }
   ],
-  "new_feature_requests": [],
-  "projectName": "Restore application to Version 35",
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Update risk management/lot size calculator: ask whether user trades own capital or funded account; for funded accounts collect risk amount, SL (pips), pair, and selectable account sizes (1k,2k,5k,10k,25k,50k,100k,200k,other); for own capital collect account size (50,100,other with custom amount); compute and output recommended lot size.",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "projectName": "Update risk/lot size calculator to support funded vs own-capital account flows",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

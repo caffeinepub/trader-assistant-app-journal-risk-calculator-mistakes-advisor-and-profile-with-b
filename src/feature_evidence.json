@@ -2,13 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-restore-the-deployed-application-codebase-to-match-the-previously-working-version-35-state-full-rollback-so-the-app-behavior-and-ui-match-version-35-rather-than-the-current-version",
-      "featureTitle": "Restore the deployed application codebase to match the previously working **Version 35** state (full rollback), so the app behavior and UI match Version 35 rather than the current version.",
+      "featureId": "feature-update-the-risk-calculator-ui-to-first-ask-the-user-whether-they-trade-a-funded-account-or-own-capital-and-conditionally-render-the-rest-of-the-form-based-on-that-selection",
+      "featureTitle": "Update the Risk Calculator UI to first ask the user whether they trade a Funded Account or Own Capital, and conditionally render the rest of the form based on that selection.",
       "files": [
-        "frontend/index.html",
-        "frontend/src/App.tsx",
-        "frontend/src/components/navigation/BottomNav.tsx",
-        "frontend/src/lib/branding.ts"
+        "frontend/src/tabs/RiskCalculatorTab.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -25,12 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-fix-the-restore-rollback-workflow-so-the-version-35-restore-succeeds-the-previous-restore-attempt-failed-ensure-the-build-pipeline-can-complete-a-version-35-restore-without-throwing-an-implementation-error",
-      "featureTitle": "Fix the restore/rollback workflow so the Version 35 restore succeeds (the previous restore attempt failed); ensure the build pipeline can complete a Version 35 restore without throwing an implementation error.",
+      "featureId": "feature-for-the-funded-account-flow-add-an-account-size-selector-with-presets-1k-2k-5k-10k-25k-50k-100k-200k-plus-an-other-option-that-reveals-a-numeric-input-for-a-custom-account-size",
+      "featureTitle": "For the Funded Account flow, add an Account Size selector with presets: $1k, $2k, $5k, $10k, $25k, $50k, $100k, $200k, plus an “Other” option that reveals a numeric input for a custom account size.",
       "files": [
-        "frontend/src/hooks/useActorWithStatus.ts",
-        "frontend/src/lib/backendConnectionErrors.ts",
-        "frontend/src/lib/backendDiagnostics.ts"
+        "frontend/src/tabs/RiskCalculatorTab.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -43,6 +38,126 @@
       ],
       "testIds": [
         "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-for-the-own-capital-flow-add-an-account-size-selector-with-presets-50-100-plus-an-other-option-that-reveals-a-numeric-input-for-a-custom-account-size",
+      "featureTitle": "For the Own Capital flow, add an Account Size selector with presets: $50, $100, plus an “Other” option that reveals a numeric input for a custom account size.",
+      "files": [
+        "frontend/src/tabs/RiskCalculatorTab.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-change-the-calculator-inputs-to-use-stop-loss-in-pips-numeric-instead-of-entry-stop-loss-prices-and-update-validation-and-result-display-accordingly",
+      "featureTitle": "Change the calculator inputs to use Stop Loss in pips (numeric) instead of entry/stop-loss prices, and update validation and result display accordingly.",
+      "files": [
+        "frontend/src/tabs/RiskCalculatorTab.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-risk-amount-usd-numeric-input-for-both-flows-and-calculate-the-recommended-lot-size-using-lotsize-riskusd-slpips-pipvalueperlotadjusted-reusing-existing-pip-value-lookup-and-lot-size-calculation-utilities-where-possible",
+      "featureTitle": "Add a “Risk Amount (USD)” numeric input for both flows and calculate the recommended lot size using: lotSize = riskUSD / (slPips * pipValuePerLotAdjusted), reusing existing pip-value lookup and lot-size calculation utilities where possible.",
+      "files": [
+        "frontend/src/tabs/RiskCalculatorTab.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-keep-the-trading-pair-selection-including-the-current-behavior-that-requires-a-custom-pip-value-for-xauusd-xagusd-and-other-and-ensure-the-funded-own-capital-flow-works-with-this-pair-logic",
+      "featureTitle": "Keep the trading pair selection, including the current behavior that requires a custom pip value for XAUUSD, XAGUSD, and OTHER, and ensure the funded/own-capital flow works with this pair logic.",
+      "files": [
+        "frontend/src/tabs/RiskCalculatorTab.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-replace-browser-alert-error-handling-in-the-risk-calculator-with-in-page-validation-feedback-e-g-an-alert-component-area-so-errors-are-shown-within-the-calculator-ui",
+      "featureTitle": "Replace browser `alert(...)` error handling in the Risk Calculator with in-page validation feedback (e.g., an Alert component area) so errors are shown within the calculator UI.",
+      "files": [
+        "frontend/src/tabs/RiskCalculatorTab.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-7"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-soft-validation-warning-when-risk-amount-usd-exceeds-the-selected-account-size-without-blocking-calculation-user-can-still-calculate",
+      "featureTitle": "Add a soft validation warning when Risk Amount (USD) exceeds the selected account size, without blocking calculation (user can still calculate).",
+      "files": [
+        "frontend/src/tabs/RiskCalculatorTab.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-8"
       ],
       "confidence": "high"
     }

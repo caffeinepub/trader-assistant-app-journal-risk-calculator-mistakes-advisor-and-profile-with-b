@@ -1,65 +1,137 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Frontend rollback alignment and restore-build stabilization for Version 35",
+  "title": "Risk/lot size calculator: funded vs own-capital flows + stop-loss pips + in-page validation",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Revert the frontend UI/behavior to match the previously working Version 35 experience (remove Version 38+ UI changes).",
+      "summary": "Add an initial account-mode selector (Funded vs Own Capital) and conditionally render/reset calculator inputs by mode.",
       "acceptanceCriteria": [
-        "After deployment, the running app reflects the same functionality and UI as Version 35 (no Version 38+ changes remain).",
-        "No build-time or deploy-time errors occur during the restore attempt."
+        "Risk calculator shows an initial selector with two options: “Funded Account” and “Own Capital”.",
+        "Changing the selection resets/hides inputs that are not applicable to the selected mode.",
+        "All user-facing text is in English."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
           "operation": "modify",
-          "description": "Rollback Version 38+ UI/behavior changes in the main app shell (connection/initialization states, tab visibility/ordering, header/footer content) to match the Version 35 UX. Ensure any removed functionality is not referenced anywhere to avoid runtime errors."
-        },
-        {
-          "path": "frontend/src/lib/branding.ts",
-          "operation": "modify",
-          "description": "Restore Version 35 branding constants (name/tagline/logo path) so the header/logo render matches Version 35. If using a generated asset, point to the exact static file path under frontend/public/assets/generated/. Ensure the chosen values match Version 35."
-        },
-        {
-          "path": "frontend/index.html",
-          "operation": "modify",
-          "description": "Restore Version 35 head metadata and icons (favicon/apple-touch-icon/title/description) to match Version 35. Ensure any icon references resolve to existing assets and match Version 35."
-        },
-        {
-          "path": "frontend/src/components/navigation/BottomNav.tsx",
-          "operation": "modify",
-          "description": "Adjust navigation/tab rendering (labels/icons/active behavior) to match Version 35 navigation behavior and ensure it stays wired to the tabs used in frontend/src/App.tsx."
+          "description": "Introduce an initial 'Account Mode' selection (Funded Account vs Own Capital) and render the rest of the form only after a mode is chosen; when mode changes, clear mode-specific fields (account size preset/other) and also clear calculation result + any in-page messages to avoid stale state."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Fix frontend restore/build failures so a Version 35 restore can compile and deploy successfully, with clear actionable configuration errors when prerequisites are missing.",
+      "summary": "Implement funded-account account-size presets with an Other option that reveals a custom USD input and is used in calculation/validation context.",
       "acceptanceCriteria": [
-        "Triggering a restore to Version 35 completes successfully end-to-end (build + deploy).",
-        "If any restore preconditions are required, the system surfaces a clear, actionable error message explaining what is missing instead of a generic implementation failure."
+        "When “Funded Account” is selected, the form includes an “Account Size (USD)” control with the specified presets and an “Other” option.",
+        "Selecting “Other” reveals a numeric input to enter a custom funded account size in USD.",
+        "The funded account size used for calculation/validation equals the selected preset amount or the custom “Other” amount."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useActorWithStatus.ts",
+          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
           "operation": "modify",
-          "description": "Remove or safely guard any calls that can break a Version 35 restore build (e.g., invoking backend functions not present/typed in the current frontend interface). Ensure actor initialization/health check still works and failures are converted into actionable errors rather than unhandled implementation errors."
+          "description": "When mode is Funded Account, add an 'Account Size (USD)' selector with presets 1k, 2k, 5k, 10k, 25k, 50k, 100k, 200k and an 'Other' option; if 'Other' is selected, reveal a numeric input for the custom size and derive a single fundedAccountSizeUSD value from preset vs other (used for warning/validation context)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Implement own-capital account-size presets ($50/$100) with an Other option that reveals a custom USD input and is used in calculation/validation context.",
+      "acceptanceCriteria": [
+        "When “Own Capital” is selected, the form includes an “Account Size (USD)” control with presets $50 and $100 and an “Other” option.",
+        "Selecting “Other” reveals a numeric input to enter a custom own-capital size in USD.",
+        "The own-capital size used for calculation/validation equals the selected preset amount or the custom “Other” amount."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
+          "operation": "modify",
+          "description": "When mode is Own Capital, add an 'Account Size (USD)' selector with presets 50 and 100 and an 'Other' option; if 'Other' is selected, reveal a numeric input for the custom size and derive a single ownCapitalSizeUSD value from preset vs other (used for warning/validation context)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Switch stop-loss input to direct pips entry, remove entry/price-based pips conversion, and reflect pips in results.",
+      "acceptanceCriteria": [
+        "The form includes a “Stop Loss (pips)” numeric input.",
+        "The previous entry/price-based stop-loss-to-pips calculation is removed from the UI flow and replaced by using the user-entered pips value directly.",
+        "Result section displays “Stop Loss (pips)” using the entered pips value."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
+          "operation": "modify",
+          "description": "Remove the Entry Price and price-based Stop Loss inputs and replace them with a single numeric 'Stop Loss (pips)' input; update calculation + result rendering to use/display the user-entered pips directly."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Add Risk Amount (USD) input and compute lot size from riskUSD, stop-loss pips, and pip value per lot (adjusted), with clear validation and updated outputs.",
+      "acceptanceCriteria": [
+        "The form includes a required “Risk Amount (USD)” numeric input.",
+        "On Calculate, the app computes lot size using the entered risk amount, entered stop-loss pips, and the pip value for the selected pair (or custom pip value when required).",
+        "If required inputs are missing/invalid (risk <= 0, stop loss pips <= 0, missing pair, missing custom pip value when required), the user sees a clear English error message and no result is shown.",
+        "The displayed “Position Size” output updates to reflect the new inputs."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
+          "operation": "modify",
+          "description": "Add a required numeric 'Risk Amount (USD)' input (shown in both modes) and update the Calculate handler to: validate required inputs, resolve pip value (built-in vs custom), apply any existing pip-value-per-lot adjustment logic if still desired, call the existing calculateLotSize utility using lotSize = riskUSD / (slPips * pipValuePerLotAdjusted), and update the result section to show the new Position Size along with risk amount, stop-loss pips, and pip value used."
         },
         {
-          "path": "frontend/src/lib/backendConnectionErrors.ts",
+          "path": "frontend/src/lib/riskCalculator.ts",
           "operation": "modify",
-          "description": "Ensure restore preconditions (especially missing/placeholder BACKEND_CANISTER_ID) produce a clear, actionable message suitable for deploy diagnostics (what is missing, where it should come from, and what to do next), and that these errors do not trigger infinite/pointless retries."
-        },
+          "description": "Keep/align the calculator utility so it cleanly supports the new formula and validations (riskUSD > 0, slPips > 0, pipValuePerLot > 0) and returns an English error message when invalid; reuse existing pip-value lookup behavior."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Preserve trading-pair selection and custom pip value requirement for XAUUSD/XAGUSD/OTHER in both funded and own-capital flows.",
+      "acceptanceCriteria": [
+        "Trading pair select remains available in both flows.",
+        "If the selected pair is XAUUSD, XAGUSD, or OTHER, a “Custom Pip Value (USD)” input is required before calculation.",
+        "If the selected pair is not one of those, the calculator uses the built-in pip value lookup."
+      ],
+      "file_operations": [
         {
-          "path": "frontend/src/lib/backendDiagnostics.ts",
+          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
           "operation": "modify",
-          "description": "Harden canister-id discovery so Version 35 restores reliably detect configuration issues and report the canister ID source consistently across local/IC/Caffeine deployments."
-        },
+          "description": "Keep the Trading Pair selector available regardless of mode and maintain the current behavior: when pair is XAUUSD, XAGUSD, or OTHER, show a 'Custom Pip Value (USD)' input and require it for calculation; otherwise use the existing pip-value lookup."
+        }
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "summary": "Replace window.alert validation with in-page error feedback in the risk calculator view.",
+      "acceptanceCriteria": [
+        "No validation failures use `window.alert` in the Risk Calculator.",
+        "Validation errors appear inside the calculator view in English, and are cleared/updated appropriately when the user edits inputs or recalculates."
+      ],
+      "file_operations": [
         {
-          "path": "frontend/public/env.json",
+          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
           "operation": "modify",
-          "description": "Keep env.json compatible with Version 35 restore assumptions (runtime canister ID injection). Ensure placeholder behavior is supported and produces the actionable error messaging in-app (not a generic implementation failure)."
+          "description": "Remove all alert(...) calls and implement in-page validation feedback: store an error message in component state, render it inside the calculator UI using the existing Alert component area, clear errors when relevant inputs change and/or when recalculating, and ensure no result is shown when a blocking validation error is present."
+        }
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "summary": "Show a non-blocking warning when risk amount exceeds selected account size while still allowing calculation.",
+      "acceptanceCriteria": [
+        "If risk amount > account size, the UI shows a visible warning message in the calculator.",
+        "Calculation still completes and shows a lot size result despite the warning."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
+          "operation": "modify",
+          "description": "Derive a single selectedAccountSizeUSD from the active mode's account-size control, and when riskUSD > selectedAccountSizeUSD show a visible in-page warning (distinct from blocking errors) while still performing the lot-size calculation and showing results."
         }
       ]
     }

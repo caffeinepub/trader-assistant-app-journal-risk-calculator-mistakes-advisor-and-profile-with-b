@@ -1,108 +1,29 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T03:39:43.446Z",
-  "summary": "The diff does not provide evidence of a full rollback to the previously working Version 35 state. Instead, it appears to introduce/retain multiple new frontend and backend behaviors (branding, entitlement-based tab gating, new backend admin unlock password/payment QR code endpoints, backend connection diagnostics/error classification, runtime env loader, theme init), which are not explicitly requested by the BuildRequest. The restore/rollback workflow fixes are not shown in any deployment/pipeline/restore tooling changes in the provided diff summary.",
-  "missing_requirements": [
-    {
-      "id": "REQ-1",
-      "requirement": "Restore the deployed application codebase to match the previously working Version 35 state (full rollback), so the app behavior and UI match Version 35 rather than the current version.",
-      "reason": "The diff summary shows multiple substantial application changes (backend types/endpoints and frontend UI/branding/behavior changes), but provides no evidence of a rollback to a known Version 35 baseline or removal of Version 38+ changes. Without an explicit Version 35 reference/baseline or reversion-oriented changes, the requirement cannot be verified as implemented.",
-      "evidence": [
-        "backend/main.mo",
-        "frontend/src/App.tsx",
-        "frontend/src/lib/branding.ts",
-        "frontend/index.html",
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Fix the restore/rollback workflow so the Version 35 restore succeeds (build + deploy) and surfaces clear, actionable errors if preconditions are missing.",
-      "reason": "No changes are shown to restore/rollback tooling, build scripts, deployment configuration, or any explicit restore workflow code. The diff primarily shows application code changes (frontend hooks/diagnostics and backend logic), which is insufficient to conclude the restore pipeline/workflow failure is addressed.",
-      "evidence": [
-        "project_state.json",
-        "backend/main.mo",
-        "frontend/src/hooks/useActorWithStatus.ts",
-        "frontend/src/lib/backendDiagnostics.ts",
-        "frontend/src/lib/backendConnectionErrors.ts"
-      ]
-    }
-  ],
+  "generatedAt": "2026-02-11T08:27:04.075Z",
+  "summary": "RiskCalculatorTab.tsx shows substantial implementation aligned with funded vs own-capital flows: account mode state, account-size presets with “other”, stop-loss pips + risk amount inputs, pip-value validation (including custom pip for null lookup), in-page validation error state, and a non-blocking warning when risk exceeds account size. The diff is truncated, so some UI/AC details (conditional rendering, exact result display fields) can’t be fully confirmed from the provided evidence.",
+  "missing_requirements": [],
   "hallucinated_features": [
     {
-      "description": "Hard-coded admin unlock password stored as a stable variable in the backend.",
-      "reason": "The BuildRequest only asks for a Version 35 rollback and a fix to the restore workflow; it does not request introducing or changing admin unlock/password mechanisms.",
+      "description": "Project metadata/state tracking file updated (project_state.json) even though the BuildRequest only specifies frontend calculator behavior changes.",
+      "reason": "BuildRequest contains no requirement to update project state/metadata files; this is outside the requested calculator UI/logic scope.",
       "evidence": [
-        "backend/main.mo"
+        "project_state.json"
       ]
     },
     {
-      "description": "Payment QR code upload/clear and public getter endpoints (paymentQRCode state and related methods).",
-      "reason": "Not requested by the rollback/restore workflow requirements; appears to be new or unrelated feature work.",
+      "description": "Repository summary artifact updated (frontend-file-summaries.txt).",
+      "reason": "BuildRequest does not request maintaining/updating this summary file; it is not part of the specified calculator requirements.",
       "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "description": "Entitlement-based feature gating of tabs (filtering enabled tabs and redirecting when a tab is not entitled).",
-      "reason": "The request is specifically to restore Version 35 behavior/UI and fix restore workflow; entitlement gating is a product behavior change not requested.",
-      "evidence": [
-        "frontend/src/App.tsx"
-      ]
-    },
-    {
-      "description": "New branding constants and updated app naming/tagline/logo path.",
-      "reason": "Branding updates are not requested as part of the rollback/restore workflow fix and may constitute UI changes beyond what is necessary.",
-      "evidence": [
-        "frontend/src/lib/branding.ts",
-        "frontend/src/App.tsx",
-        "frontend/index.html"
-      ]
-    },
-    {
-      "description": "Runtime environment loader that fetches /env.json to set BACKEND_CANISTER_ID before app start.",
-      "reason": "Not requested by the rollback/restore requirements; appears to be additional deployment/runtime configuration logic.",
-      "evidence": [
-        "frontend/index.html",
-        "frontend/src/lib/backendDiagnostics.ts"
-      ]
-    },
-    {
-      "description": "Theme initialization script in index.html to prevent flash and dark/light handling, plus theme toggle mention in ProfileTab summary.",
-      "reason": "Not requested; constitutes UI/UX behavior change beyond rollback/restore requirements.",
-      "evidence": [
-        "frontend/index.html",
         "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Backend connection error classification and diagnostics utilities.",
-      "reason": "Not explicitly requested by REQ-1/REQ-2; while it may improve error messaging in-app, it is not clearly tied to the restore/rollback workflow/pipeline completion requirement.",
-      "evidence": [
-        "frontend/src/lib/backendConnectionErrors.ts",
-        "frontend/src/lib/backendDiagnostics.ts"
-      ]
-    },
-    {
-      "description": "Actor initialization logic that attempts access control initialization via a secret URL parameter (caffeineAdminToken).",
-      "reason": "Not requested; introduces/changes auth/access-control initialization behavior beyond the rollback/restore requirements.",
-      "evidence": [
-        "frontend/src/hooks/useActorWithStatus.ts"
       ]
     }
   ],
-  "confidence": 0.72,
+  "confidence": 0.66,
   "changed_files": [
-    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/index.html",
-    "frontend/src/App.tsx",
-    "frontend/src/components/navigation/BottomNav.tsx",
-    "frontend/src/hooks/useActorWithStatus.ts",
-    "frontend/src/lib/backendConnectionErrors.ts",
-    "frontend/src/lib/backendDiagnostics.ts",
-    "frontend/src/lib/branding.ts",
+    "frontend/src/tabs/RiskCalculatorTab.tsx",
     "project_state.json"
   ]
 }

@@ -1,64 +1,112 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T03:39:43.449Z",
+  "generatedAt": "2026-02-11T08:27:04.078Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 8,
+    "implemented": 8,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Restore the deployed application codebase to match the previously working **Version 35** state (full rollback), so the app behavior and UI match Version 35 rather than the current version.",
+        "summary": "Update the Risk Calculator UI to first ask the user whether they trade a Funded Account or Own Capital, and conditionally render the rest of the form based on that selection.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/lib/branding.ts",
-          "frontend/index.html",
-          "frontend/src/components/navigation/BottomNav.tsx"
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/lib/branding.ts",
-          "frontend/index.html",
-          "frontend/src/components/navigation/BottomNav.tsx"
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Fix the restore/rollback workflow so the Version 35 restore succeeds (the previous restore attempt failed); ensure the build pipeline can complete a Version 35 restore without throwing an implementation error.",
+        "summary": "For the Funded Account flow, add an Account Size selector with presets: $1k, $2k, $5k, $10k, $25k, $50k, $100k, $200k, plus an “Other” option that reveals a numeric input for a custom account size.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useActorWithStatus.ts",
-          "frontend/src/lib/backendConnectionErrors.ts",
-          "frontend/src/lib/backendDiagnostics.ts",
-          "frontend/public/env.json"
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useActorWithStatus.ts",
-          "frontend/src/lib/backendConnectionErrors.ts",
-          "frontend/src/lib/backendDiagnostics.ts"
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "For the Own Capital flow, add an Account Size selector with presets: $50, $100, plus an “Other” option that reveals a numeric input for a custom account size.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Change the calculator inputs to use Stop Loss in pips (numeric) instead of entry/stop-loss prices, and update validation and result display accordingly.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Add a “Risk Amount (USD)” numeric input for both flows and calculate the recommended lot size using: lotSize = riskUSD / (slPips * pipValuePerLotAdjusted), reusing existing pip-value lookup and lot-size calculation utilities where possible.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/tabs/RiskCalculatorTab.tsx",
+          "frontend/src/lib/riskCalculator.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Keep the trading pair selection, including the current behavior that requires a custom pip value for XAUUSD, XAGUSD, and OTHER, and ensure the funded/own-capital flow works with this pair logic.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
+        ]
+      },
+      {
+        "id": "REQ-7",
+        "summary": "Replace browser `alert(...)` error handling in the Risk Calculator with in-page validation feedback (e.g., an Alert component area) so errors are shown within the calculator UI.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
+        ]
+      },
+      {
+        "id": "REQ-8",
+        "summary": "Add a soft validation warning when Risk Amount (USD) exceeds the selected account size, without blocking calculation (user can still calculate).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/index.html",
-    "frontend/src/App.tsx",
-    "frontend/src/components/navigation/BottomNav.tsx",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useActorWithStatus.ts",
-    "frontend/src/lib/backendConnectionErrors.ts",
-    "frontend/src/lib/backendDiagnostics.ts",
-    "frontend/src/lib/branding.ts",
+    "frontend/src/tabs/RiskCalculatorTab.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

@@ -1,67 +1,164 @@
 {
   "kind": "build_request",
-  "title": "Restore application to Version 35",
+  "title": "Update risk/lot size calculator to support funded vs own-capital account flows",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Restore the deployed application codebase to match the previously working **Version 35** state (full rollback), so the app behavior and UI match Version 35 rather than the current version.",
-      "target": "both",
+      "text": "Update the Risk Calculator UI to first ask the user whether they trade a Funded Account or Own Capital, and conditionally render the rest of the form based on that selection.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6",
-          "msg-12"
+          "msg-1"
         ],
         "quotes": [
-          "Pls give me version 35 back",
-          "Yes"
+          "risk management calculator first it ask in which do you trade own capital or funded account"
         ]
       },
       "acceptanceCriteria": [
-        "After deployment, the running app reflects the same functionality and UI as Version 35 (no Version 38+ changes remain).",
-        "No build-time or deploy-time errors occur during the restore attempt."
+        "Risk calculator shows an initial selector with two options: “Funded Account” and “Own Capital”.",
+        "Changing the selection resets/hides inputs that are not applicable to the selected mode.",
+        "All user-facing text is in English."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Fix the restore/rollback workflow so the Version 35 restore succeeds (the previous restore attempt failed); ensure the build pipeline can complete a Version 35 restore without throwing an implementation error.",
-      "target": "unknown",
+      "text": "For the Funded Account flow, add an Account Size selector with presets: $1k, $2k, $5k, $10k, $25k, $50k, $100k, $200k, plus an “Other” option that reveals a numeric input for a custom account size.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-8",
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "Sorry, the AI was unable to implement your request.",
-          "Pls give me version 35 back"
+          "it also ask account size like in funded account 1k dollar, 2k dollar ,5k dollar,10k dollar,25k dollar,50k dollar 100k dollar 200 k dollar and others"
         ]
       },
       "acceptanceCriteria": [
-        "Triggering a restore to Version 35 completes successfully end-to-end (build + deploy).",
-        "If any restore preconditions are required, the system surfaces a clear, actionable error message explaining what is missing instead of a generic implementation failure."
+        "When “Funded Account” is selected, the form includes an “Account Size (USD)” control with the specified presets and an “Other” option.",
+        "Selecting “Other” reveals a numeric input to enter a custom funded account size in USD.",
+        "The funded account size used for calculation/validation equals the selected preset amount or the custom “Other” amount."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "For the Own Capital flow, add an Account Size selector with presets: $50, $100, plus an “Other” option that reveals a numeric input for a custom account size.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "and in real capital what is account size 50 dollar 100 dollar or other if other than type how much is your capital"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When “Own Capital” is selected, the form includes an “Account Size (USD)” control with presets $50 and $100 and an “Other” option.",
+        "Selecting “Other” reveals a numeric input to enter a custom own-capital size in USD.",
+        "The own-capital size used for calculation/validation equals the selected preset amount or the custom “Other” amount."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Change the calculator inputs to use Stop Loss in pips (numeric) instead of entry/stop-loss prices, and update validation and result display accordingly.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "what is the sl in pips"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The form includes a “Stop Loss (pips)” numeric input.",
+        "The previous entry/price-based stop-loss-to-pips calculation is removed from the UI flow and replaced by using the user-entered pips value directly.",
+        "Result section displays “Stop Loss (pips)” using the entered pips value."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Add a “Risk Amount (USD)” numeric input for both flows and calculate the recommended lot size using: lotSize = riskUSD / (slPips * pipValuePerLotAdjusted), reusing existing pip-value lookup and lot-size calculation utilities where possible.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "how much you want to risk ... from this information it tell how much lot should we open"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The form includes a required “Risk Amount (USD)” numeric input.",
+        "On Calculate, the app computes lot size using the entered risk amount, entered stop-loss pips, and the pip value for the selected pair (or custom pip value when required).",
+        "If required inputs are missing/invalid (risk <= 0, stop loss pips <= 0, missing pair, missing custom pip value when required), the user sees a clear English error message and no result is shown.",
+        "The displayed “Position Size” output updates to reflect the new inputs."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Keep the trading pair selection, including the current behavior that requires a custom pip value for XAUUSD, XAGUSD, and OTHER, and ensure the funded/own-capital flow works with this pair logic.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "and which pair do you trade"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Trading pair select remains available in both flows.",
+        "If the selected pair is XAUUSD, XAGUSD, or OTHER, a “Custom Pip Value (USD)” input is required before calculation.",
+        "If the selected pair is not one of those, the calculator uses the built-in pip value lookup."
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "text": "Replace browser `alert(...)` error handling in the Risk Calculator with in-page validation feedback (e.g., an Alert component area) so errors are shown within the calculator UI.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "from this information it tell how much lot should we open"
+        ]
+      },
+      "acceptanceCriteria": [
+        "No validation failures use `window.alert` in the Risk Calculator.",
+        "Validation errors appear inside the calculator view in English, and are cleared/updated appropriately when the user edits inputs or recalculates."
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "text": "Add a soft validation warning when Risk Amount (USD) exceeds the selected account size, without blocking calculation (user can still calculate).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "it also ask account size ... from this information it tell how much lot should we open"
+        ]
+      },
+      "acceptanceCriteria": [
+        "If risk amount > account size, the UI shows a visible warning message in the calculator.",
+        "Calculation still completes and shows a lot size result despite the warning."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo; only create backend/migration.mo if an upgrade requires state migration.",
-    "Do not modify any files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT."
+    "Do not edit files under frontend/src/components/ui (shadcn components are read-only).",
+    "Keep the backend as a single Motoko actor; do not introduce additional backend services.",
+    "Implement this change without requiring backend state migrations (calculator logic is frontend-only)."
   ],
   "nonGoals": [
-    "Implementing new features or redesigning the app beyond what is necessary to match Version 35.",
-    "Changing authentication providers (Internet Identity must remain the auth solution)."
+    "Adding broker integrations, live pricing, or real-time data feeds.",
+    "Adding external authentication providers beyond Internet Identity.",
+    "Persisting calculator settings to backend storage unless explicitly requested later."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }
