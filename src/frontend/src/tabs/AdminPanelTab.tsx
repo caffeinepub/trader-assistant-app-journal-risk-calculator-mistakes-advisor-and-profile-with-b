@@ -1,82 +1,81 @@
-import { useEffect, useState } from 'react';
-import { useIsLockedAdmin } from '../hooks/useQueries';
+import { useState, useEffect } from 'react';
 import { useActor } from '../hooks/useActor';
+import { useIsLockedAdmin } from '../hooks/useQueries';
 import AdminPanel from '../components/admin/AdminPanel';
 import AdminAccessDialog from '../components/admin/AdminAccessDialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 export default function AdminPanelTab() {
   const { actor } = useActor();
-  const { data: isLockedAdmin, isLoading: isLockedLoading } = useIsLockedAdmin();
-  const [showDialog, setShowDialog] = useState(false);
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [isAdminLoading, setIsAdminLoading] = useState(true);
+  const { data: isLockedAdmin, isLoading: checkingLock, refetch } = useIsLockedAdmin();
+  const [isPermanentAdmin, setIsPermanentAdmin] = useState(false);
+  const [checkingPermanent, setCheckingPermanent] = useState(true);
+  const [showAccessDialog, setShowAccessDialog] = useState(false);
 
-  // Check if user is a permanent admin
   useEffect(() => {
-    async function checkAdmin() {
+    const checkPermanentAdmin = async () => {
       if (!actor) return;
       try {
         const result = await actor.isCallerAdmin();
-        setIsAdmin(result);
+        setIsPermanentAdmin(result);
       } catch (error) {
-        setIsAdmin(false);
+        setIsPermanentAdmin(false);
       } finally {
-        setIsAdminLoading(false);
+        setCheckingPermanent(false);
       }
-    }
-    checkAdmin();
+    };
+
+    checkPermanentAdmin();
   }, [actor]);
 
-  // Check if user is authorized (either true admin or password-unlocked)
-  const isAuthorized = isAdmin === true || isLockedAdmin === true;
+  const isAuthorized = isPermanentAdmin || isLockedAdmin;
 
-  // Show dialog when not authorized and not loading
   useEffect(() => {
-    if (!isAdminLoading && !isLockedLoading && !isAuthorized) {
-      setShowDialog(true);
+    if (!checkingLock && !checkingPermanent && !isAuthorized) {
+      setShowAccessDialog(true);
     }
-  }, [isAdminLoading, isLockedLoading, isAuthorized]);
+  }, [checkingLock, checkingPermanent, isAuthorized]);
 
-  // Handle successful unlock
-  const handleUnlockSuccess = () => {
-    setShowDialog(false);
+  const handleAccessSuccess = () => {
+    setShowAccessDialog(false);
+    refetch();
   };
 
-  // Handle dialog cancel
-  const handleCancel = () => {
-    setShowDialog(false);
+  const handleAccessCancel = () => {
+    setShowAccessDialog(false);
   };
 
-  // Show loading state
-  if (isAdminLoading || isLockedLoading) {
+  if (checkingLock || checkingPermanent) {
     return (
-      <div className="container mx-auto px-4 py-16 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground">Checking admin access...</p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center space-y-4">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-muted-foreground">Checking admin access...</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Show AdminPanel only if authorized
-  if (isAuthorized) {
-    return <AdminPanel />;
+  if (!isAuthorized) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Admin access required. Please unlock admin panel to continue.
+          </AlertDescription>
+        </Alert>
+        <AdminAccessDialog 
+          open={showAccessDialog} 
+          onSuccess={handleAccessSuccess}
+          onCancel={handleAccessCancel}
+        />
+      </div>
+    );
   }
 
-  // Show dialog if not authorized
-  return (
-    <>
-      <div className="container mx-auto px-4 py-16 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <p className="text-muted-foreground">Admin access required</p>
-        </div>
-      </div>
-      <AdminAccessDialog 
-        open={showDialog} 
-        onSuccess={handleUnlockSuccess}
-        onCancel={handleCancel}
-      />
-    </>
-  );
+  return <AdminPanel />;
 }

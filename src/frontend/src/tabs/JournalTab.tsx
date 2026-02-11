@@ -4,34 +4,17 @@ import JournalAnalyticsHeader from '../components/journal/JournalAnalyticsHeader
 import TradeEntryForm from '../components/journal/TradeEntryForm';
 import TradeList from '../components/journal/TradeList';
 import ProfitCalendar from '../components/journal/ProfitCalendar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Calendar as CalendarIcon } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 export default function JournalTab() {
-  const { data: trades = [], isLoading } = useGetAllTrades();
+  const { data: trades = [], isLoading, error } = useGetAllTrades();
   const { data: analytics } = useGetAnalytics(null, null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
-  // Clear selection if the selected date no longer has trades or is outside current view
-  useEffect(() => {
-    if (selectedDate) {
-      const hasTradesOnDate = trades.some((trade) => {
-        const tradeDate = new Date(Number(trade.tradeDate) / 1_000_000);
-        return (
-          tradeDate.getDate() === selectedDate.getDate() &&
-          tradeDate.getMonth() === selectedDate.getMonth() &&
-          tradeDate.getFullYear() === selectedDate.getFullYear()
-        );
-      });
-      
-      if (!hasTradesOnDate) {
-        setSelectedDate(undefined);
-      }
-    }
-  }, [trades, selectedDate]);
-
-  const tradesForSelectedDate = selectedDate
+  // Filter trades by selected date
+  const filteredTrades = selectedDate
     ? trades.filter((trade) => {
         const tradeDate = new Date(Number(trade.tradeDate) / 1_000_000);
         return (
@@ -40,54 +23,63 @@ export default function JournalTab() {
           tradeDate.getFullYear() === selectedDate.getFullYear()
         );
       })
-    : [];
+    : trades;
+
+  // Clear selection if selected date no longer has trades
+  useEffect(() => {
+    if (selectedDate && filteredTrades.length === 0 && trades.length > 0) {
+      setSelectedDate(undefined);
+    }
+  }, [selectedDate, filteredTrades.length, trades.length]);
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load trades. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      {/* Analytics Header */}
       <JournalAnalyticsHeader analytics={analytics} />
 
-      <div className="mt-8">
-        <Tabs defaultValue="trades" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="trades">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Trades
-            </TabsTrigger>
-            <TabsTrigger value="calendar">
-              <CalendarIcon className="w-4 h-4 mr-2" />
-              Calendar
-            </TabsTrigger>
-          </TabsList>
+      {/* Trade Entry Form */}
+      <TradeEntryForm />
 
-          <TabsContent value="trades" className="space-y-6 mt-6">
-            <TradeEntryForm />
-            <TradeList trades={trades} isLoading={isLoading} />
-          </TabsContent>
+      {/* Tabs for Trades List and Calendar */}
+      <Tabs defaultValue="list" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="list">Trades List</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="calendar" className="mt-6">
-            <ProfitCalendar
-              trades={trades}
-              selectedDate={selectedDate}
-              onSelectDate={setSelectedDate}
-            />
-            {selectedDate && tradesForSelectedDate.length > 0 && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>
-                    Trades for {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                  </CardTitle>
-                  <CardDescription>
-                    {tradesForSelectedDate.length} trade{tradesForSelectedDate.length !== 1 ? 's' : ''} on this day
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TradeList trades={tradesForSelectedDate} isLoading={false} compact />
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
+        <TabsContent value="list" className="space-y-4">
+          <TradeList trades={filteredTrades} isLoading={isLoading} />
+        </TabsContent>
+
+        <TabsContent value="calendar" className="space-y-4">
+          <ProfitCalendar
+            trades={trades}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
+          {selectedDate && (
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold mb-2">
+                Trades on {selectedDate.toLocaleDateString()}
+              </h3>
+              <TradeList trades={filteredTrades} isLoading={false} compact />
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

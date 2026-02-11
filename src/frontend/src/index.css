@@ -4,60 +4,60 @@
 
 @layer base {
   :root {
-    /* Gold/Charcoal theme - Light mode */
-    --background: oklch(98% 0.01 80);
-    --foreground: oklch(20% 0.02 80);
+    /* Gold & Charcoal Theme - Light Mode */
+    --background: oklch(98% 0.01 85);
+    --foreground: oklch(20% 0.02 85);
     --card: oklch(100% 0 0);
-    --card-foreground: oklch(20% 0.02 80);
+    --card-foreground: oklch(20% 0.02 85);
     --popover: oklch(100% 0 0);
-    --popover-foreground: oklch(20% 0.02 80);
-    --primary: oklch(60% 0.15 75);
-    --primary-foreground: oklch(98% 0.01 75);
-    --secondary: oklch(92% 0.02 80);
-    --secondary-foreground: oklch(20% 0.02 80);
-    --muted: oklch(94% 0.01 80);
-    --muted-foreground: oklch(50% 0.02 80);
-    --accent: oklch(88% 0.08 75);
-    --accent-foreground: oklch(20% 0.02 75);
-    --destructive: oklch(55% 0.22 25);
-    --destructive-foreground: oklch(98% 0.01 25);
-    --border: oklch(88% 0.01 80);
-    --input: oklch(88% 0.01 80);
-    --ring: oklch(60% 0.15 75);
+    --popover-foreground: oklch(20% 0.02 85);
+    --primary: oklch(55% 0.15 85);
+    --primary-foreground: oklch(98% 0.01 85);
+    --secondary: oklch(92% 0.02 85);
+    --secondary-foreground: oklch(20% 0.02 85);
+    --muted: oklch(94% 0.01 85);
+    --muted-foreground: oklch(45% 0.02 85);
+    --accent: oklch(92% 0.02 85);
+    --accent-foreground: oklch(20% 0.02 85);
+    --destructive: oklch(55% 0.20 25);
+    --destructive-foreground: oklch(98% 0.01 85);
+    --border: oklch(88% 0.01 85);
+    --input: oklch(88% 0.01 85);
+    --ring: oklch(55% 0.15 85);
     --radius: 0.5rem;
-    --chart-1: oklch(60% 0.15 75);
-    --chart-2: oklch(65% 0.12 50);
-    --chart-3: oklch(55% 0.18 25);
-    --chart-4: oklch(70% 0.10 100);
-    --chart-5: oklch(50% 0.20 350);
+    --chart-1: oklch(60% 0.15 85);
+    --chart-2: oklch(65% 0.12 120);
+    --chart-3: oklch(55% 0.18 200);
+    --chart-4: oklch(70% 0.10 280);
+    --chart-5: oklch(62% 0.14 340);
   }
 
   .dark {
-    /* Gold/Charcoal theme - Dark mode */
-    --background: oklch(18% 0.02 80);
-    --foreground: oklch(95% 0.01 80);
-    --card: oklch(22% 0.02 80);
-    --card-foreground: oklch(95% 0.01 80);
-    --popover: oklch(22% 0.02 80);
-    --popover-foreground: oklch(95% 0.01 80);
-    --primary: oklch(70% 0.15 75);
-    --primary-foreground: oklch(18% 0.02 75);
-    --secondary: oklch(28% 0.02 80);
-    --secondary-foreground: oklch(95% 0.01 80);
-    --muted: oklch(28% 0.02 80);
-    --muted-foreground: oklch(65% 0.02 80);
-    --accent: oklch(35% 0.08 75);
-    --accent-foreground: oklch(95% 0.01 75);
-    --destructive: oklch(55% 0.22 25);
-    --destructive-foreground: oklch(98% 0.01 25);
-    --border: oklch(28% 0.02 80);
-    --input: oklch(28% 0.02 80);
-    --ring: oklch(70% 0.15 75);
-    --chart-1: oklch(70% 0.15 75);
-    --chart-2: oklch(65% 0.12 50);
-    --chart-3: oklch(60% 0.18 25);
-    --chart-4: oklch(70% 0.10 100);
-    --chart-5: oklch(55% 0.20 350);
+    /* Gold & Charcoal Theme - Dark Mode */
+    --background: oklch(18% 0.02 85);
+    --foreground: oklch(95% 0.01 85);
+    --card: oklch(22% 0.02 85);
+    --card-foreground: oklch(95% 0.01 85);
+    --popover: oklch(22% 0.02 85);
+    --popover-foreground: oklch(95% 0.01 85);
+    --primary: oklch(65% 0.15 85);
+    --primary-foreground: oklch(18% 0.02 85);
+    --secondary: oklch(28% 0.02 85);
+    --secondary-foreground: oklch(95% 0.01 85);
+    --muted: oklch(26% 0.02 85);
+    --muted-foreground: oklch(65% 0.02 85);
+    --accent: oklch(28% 0.02 85);
+    --accent-foreground: oklch(95% 0.01 85);
+    --destructive: oklch(55% 0.20 25);
+    --destructive-foreground: oklch(95% 0.01 85);
+    --border: oklch(30% 0.02 85);
+    --input: oklch(30% 0.02 85);
+    --ring: oklch(65% 0.15 85);
+    --chart-1: oklch(65% 0.15 85);
+    --chart-2: oklch(70% 0.12 120);
+    --chart-3: oklch(60% 0.18 200);
+    --chart-4: oklch(75% 0.10 280);
+    --chart-5: oklch(67% 0.14 340);
   }
 }
 
@@ -70,7 +70,7 @@
   }
 }
 
-/* App shell layout utilities */
+/* App Shell Layout */
 .app-shell {
   display: flex;
   flex-direction: column;
@@ -79,72 +79,71 @@
 
 .app-content {
   flex: 1;
-  padding-bottom: calc(4rem + env(safe-area-inset-bottom));
   overflow-y: auto;
+  /* Ensure full viewport height coverage */
+  min-height: 100%;
+  /* Add bottom padding for mobile to prevent BottomNav overlap */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.app-footer {
-  padding-bottom: calc(4rem + env(safe-area-inset-bottom));
-}
-
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* Text wrapping utilities */
-.break-word {
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-
-.break-all-safe {
-  word-break: break-all;
-  overflow-wrap: anywhere;
-}
-
-/* Mobile dialog improvements */
-@media (max-width: 640px) {
-  [role="dialog"] {
-    max-height: 90vh;
-    overflow-y: auto;
+/* Mobile-specific bottom spacing for BottomNav */
+@media (max-width: 1024px) {
+  .app-content {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
-/* Z-index safeguards - Ensure Radix portals render above fixed UI */
+.app-footer {
+  flex-shrink: 0;
+  /* Hide footer on mobile when BottomNav is visible */
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .app-footer {
+    display: block;
+  }
+}
+
+/* Safe area bottom for BottomNav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Text Wrapping Utilities */
+.safe-text {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.safe-text-all {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+/* Mobile Dialog Improvements */
+@media (max-width: 640px) {
+  [role="dialog"] {
+    max-width: calc(100vw - 2rem);
+  }
+}
+
+/* Increase z-index for Radix portals to render above BottomNav and other content */
 [data-radix-popper-content-wrapper],
 [data-radix-portal] {
   z-index: 100 !important;
 }
 
-/* Ensure dropdowns, popovers, selects, and menus are above bottom nav */
-[data-radix-select-content],
-[data-radix-dropdown-menu-content],
-[data-radix-popover-content],
-[data-radix-context-menu-content],
-[data-radix-menubar-content] {
+/* Ensure Select content specifically has proper stacking */
+[data-radix-select-content] {
   z-index: 100 !important;
-  max-height: min(var(--radix-popper-available-height, 400px), 400px);
-  overflow-y: auto;
+  position: fixed !important;
 }
 
-/* Prevent parent overflow clipping on dialogs and portals */
-[data-radix-dialog-overlay],
-[data-radix-alert-dialog-overlay] {
-  z-index: 90 !important;
-}
-
-[data-radix-dialog-content],
-[data-radix-alert-dialog-content] {
-  z-index: 91 !important;
-}
-
-/* Ensure sheet/drawer overlays are properly layered */
-[data-radix-sheet-overlay],
-[data-radix-drawer-overlay] {
-  z-index: 90 !important;
-}
-
-[data-radix-sheet-content],
-[data-radix-drawer-content] {
-  z-index: 91 !important;
+/* Ensure Select viewport scrolls properly */
+[data-radix-select-viewport] {
+  max-height: var(--radix-select-content-available-height);
 }

@@ -1,125 +1,90 @@
 {
   "kind": "build_request",
-  "title": "Rebuild app; fix overlapping option menus; refresh UI and update logo",
+  "title": "Convert Calculator tab to Account Lot Size Calculator (match older version)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Rebuild the application and ensure it deploys successfully (no build/runtime errors) after the previous draft expiry/generation failure.",
-      "target": "both",
+      "text": "Update the Calculator tab UI copy and structure so it presents as an \"Account Lot Size Calculator\" (instead of \"Risk Calculator\"), including the page title, descriptions, button text, and results labels, while keeping the current inputs (account type, risk mode, balance, risk %, fixed risk, trading pair, custom pip value, entry price, stop loss) and calculation behavior.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-2"
+          "msg-4"
         ],
         "quotes": [
-          "Pls build it again",
-          "Your draft app has expired. Do you want to rebuild it?"
+          "Convert this like older one for lot size calculator for account"
         ]
       },
       "acceptanceCriteria": [
-        "`dfx deploy` (or the platform build) completes successfully for both frontend and backend.",
-        "The app loads to the main shell without a blank screen or fatal console errors."
+        "When viewing the Calculator tab, the header title reads \"Lot Size Calculator\" (or \"Account Lot Size Calculator\") and no longer says \"Risk Calculator\".",
+        "The primary action button text uses lot-size wording (e.g., \"Calculate Lot Size\") and results wording refers to \"Lot Size\" / \"Position Size\" consistently.",
+        "All user-facing text introduced/changed by this update is in English."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Fix the UI overlap/visibility issue when opening options/menus so that popovers, dropdowns, and other option panels are always fully visible and not covered by fixed UI (e.g., bottom navigation) on mobile and desktop.",
+      "text": "Replace all browser `alert(...)` validation in the lot size calculator with inline form validation UI (e.g., an Alert component and/or per-field helper text), so missing/invalid inputs are shown within the page and do not trigger native alert popups.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-3"
+          "msg-4"
         ],
         "quotes": [
-          "In this when I open any other option it not clearly visible it's over lapping"
+          "Convert this like older one for lot size calculator for account"
         ]
       },
       "acceptanceCriteria": [
-        "Opening any options menu (e.g., dropdowns/popovers within tabs and dialogs) renders above fixed elements and remains readable.",
-        "Menus are not clipped by parent containers (no hidden content due to `overflow: hidden` on ancestors).",
-        "On small screens, option panels reposition or scroll as needed so all actions are accessible without overlap."
+        "Submitting with missing required fields does not open a browser alert dialog.",
+        "Validation messages are shown in the calculator view and clearly indicate what must be fixed (e.g., missing balance, missing pair, missing custom pip value for XAUUSD/XAGUSD/OTHER, invalid stop loss pips).",
+        "Once inputs are corrected, validation messages clear and calculation can proceed."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Update the app UI with a cohesive refreshed visual theme (colors, typography, spacing, surfaces) and apply it consistently across the header, tabs, forms, tables, dialogs, and admin screens. Use a distinct gold/charcoal theme inspired by the provided logo screenshot (avoid default blue/purple styling).",
+      "text": "Deduplicate pip value logic by making the lot size calculator use the existing shared pip-value utility (`frontend/src/lib/pipValues.ts`) instead of maintaining a separate hardcoded pip table in `frontend/src/lib/riskCalculator.ts`. Update imports/usages accordingly.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-3"
+          "msg-4"
         ],
         "quotes": [
-          "And also change ui and logo"
+          "Convert this like older one for lot size calculator for account"
         ]
       },
       "acceptanceCriteria": [
-        "Primary/secondary colors, background, borders, and typography are updated consistently across all tabs (Journal, Calculator, Mistakes, Profile, Admin).",
-        "Updated theme preserves accessibility (text contrast remains readable in light and dark mode if supported).",
-        "No new UI regressions: layouts remain responsive, and key screens (forms, lists, dialogs) remain usable on mobile widths."
+        "There is a single source of truth for the default pip values (the table in `frontend/src/lib/pipValues.ts`).",
+        "`frontend/src/lib/riskCalculator.ts` no longer defines its own pip values table and instead delegates to the shared pip-value helper.",
+        "The calculator continues to return the same lot-size results for the same inputs as before the refactor."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Replace/update the application logo using the uploaded image as the visual reference. Update the app branding so the header and loading/connecting states display the new logo asset.",
+      "text": "Update the bottom navigation label for the calculator tab from the generic \"Calculator\" to \"Lot Size\" (or equivalent) while keeping routing/tab id behavior unchanged (tab id remains `calculator`).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-3"
+          "msg-4"
         ],
         "quotes": [
-          "And also change ui and logo"
+          "Convert this like older one for lot size calculator for account"
         ]
       },
       "acceptanceCriteria": [
-        "A new logo image is added under `frontend/public/assets/generated/` and referenced by `frontend/src/lib/branding.ts` (`LOGO_PATH`).",
-        "Header logo and all existing logo placements (e.g., connecting/initializing/error screens in `frontend/src/App.tsx`) render the new asset without stretching or pixelation.",
-        "Logo loads correctly in production build (no 404)."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Add the newly generated logo image(s) as static assets in `frontend/public/assets/generated` and ensure the UI references them directly (do not proxy images through the backend).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-3"
-        ],
-        "quotes": [
-          "change ui and logo"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Generated image files exist at `frontend/public/assets/generated/*` with the specified filenames.",
-        "`LOGO_PATH` points to a file within `/assets/generated/` and renders correctly at runtime."
+        "The bottom nav shows the calculator tab label as \"Lot Size\" (or \"Lot Size Calc\") instead of \"Calculator\".",
+        "Tapping the tab still switches to the same calculator tab content (no new tab id is introduced)."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
-    "Do not modify files under `frontend/src/components/ui` (compose existing UI components instead).",
-    "Do not edit immutable hook entrypoints: `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useInternetIdentity.tsx`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`.",
-    "Use English for any user-facing text."
+    "Do not edit files under frontend/src/components/ui (compose existing Shadcn components instead).",
+    "Respect the existing tab id `calculator` and existing navigation structure (do not introduce new routing frameworks)."
   ],
   "nonGoals": [
-    "Adding new product features beyond fixing overlap issues and updating UI/logo (e.g., new tabs, new subscription plans, new payment providers).",
-    "Integrating third-party authentication providers (only Internet Identity is allowed).",
-    "Adding external databases or non-Internet-Computer backend services."
+    "Adding new backend storage for calculator inputs or results.",
+    "Changing authentication/subscription/entitlement logic for access to the calculator."
   ],
   "imageRequirements": {
-    "required": [
-      "Square app logo based on the uploaded gold/black trading mark and text (app-logo-yug-v2.dim_1024x1024.png)",
-      "Square app icon variant derived from the same mark, simplified for small sizes (app-icon-yug-v2.dim_512x512.png)"
-    ],
+    "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

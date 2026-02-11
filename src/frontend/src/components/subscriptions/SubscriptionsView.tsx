@@ -15,10 +15,12 @@ export default function SubscriptionsView() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground">Loading subscription details...</p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center space-y-4">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-muted-foreground">Loading subscription details...</p>
+          </div>
         </div>
       </div>
     );
@@ -26,13 +28,15 @@ export default function SubscriptionsView() {
 
   if (!subscriptionState) {
     return (
-      <Alert variant="destructive">
-        <XCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          Unable to load subscription information. Please try again later.
-        </AlertDescription>
-      </Alert>
+      <div className="container mx-auto px-4 py-8">
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Unable to load subscription information. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
@@ -92,7 +96,7 @@ export default function SubscriptionsView() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Trial Status */}
       {trialActive && (
         <Alert className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 border-emerald-200 dark:border-emerald-900">

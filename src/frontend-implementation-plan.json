@@ -1,113 +1,73 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "UI refresh + overlap fixes + updated Yug logo assets",
+  "title": "Convert Calculator tab to Account Lot Size Calculator (match older version)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Ensure the frontend rebuilds cleanly and always renders a non-blank shell across connection states.",
+      "summary": "Update the calculator tab UI copy/structure to present as an Account Lot Size Calculator while keeping existing inputs and calculation behavior.",
       "acceptanceCriteria": [
-        "`dfx deploy` (or the platform build) completes successfully for both frontend and backend.",
-        "The app loads to the main shell without a blank screen or fatal console errors."
+        "When viewing the Calculator tab, the header title reads \"Lot Size Calculator\" (or \"Account Lot Size Calculator\") and no longer says \"Risk Calculator\".",
+        "The primary action button text uses lot-size wording (e.g., \"Calculate Lot Size\") and results wording refers to \"Lot Size\" / \"Position Size\" consistently.",
+        "All user-facing text introduced/changed by this update is in English."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
           "operation": "modify",
-          "description": "Remove the `return null` fallback by adding a safe, user-visible loading shell for any non-ready/non-connecting transient state, and ensure all connection/auth states render predictably without runtime errors."
+          "description": "Update the calculator view’s English UI copy and layout to match an \"Account Lot Size Calculator\" presentation (header title/description, section titles/descriptions, button text, and result labels) while keeping the same inputs and calculation behavior intact."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Fix dropdown/popover/menu overlap and clipping so option panels remain readable and accessible above fixed UI on all screen sizes.",
+      "summary": "Replace native browser alerts with inline validation UI in the lot size calculator.",
       "acceptanceCriteria": [
-        "Opening any options menu (e.g., dropdowns/popovers within tabs and dialogs) renders above fixed elements and remains readable.",
-        "Menus are not clipped by parent containers (no hidden content due to `overflow: hidden` on ancestors).",
-        "On small screens, option panels reposition or scroll as needed so all actions are accessible without overlap."
+        "Submitting with missing required fields does not open a browser alert dialog.",
+        "Validation messages are shown in the calculator view and clearly indicate what must be fixed (e.g., missing balance, missing pair, missing custom pip value for XAUUSD/XAGUSD/OTHER, invalid stop loss pips).",
+        "Once inputs are corrected, validation messages clear and calculation can proceed."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/index.css",
+          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
           "operation": "modify",
-          "description": "Adjust global Radix/shadcn popper/portal layering so popovers/dropdowns are always above fixed UI (increase portal/popper z-index above BottomNav), and add global max-height/overflow rules for Radix menu/popover/select content to allow scrolling on small screens instead of clipping/overlap."
-        },
-        {
-          "path": "frontend/src/components/navigation/BottomNav.tsx",
-          "operation": "modify",
-          "description": "Lower the BottomNav stacking context (z-index) to ensure Radix portal-based menus/panels render above it, while keeping the nav fixed and interactive."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Ensure the main content area and shell containers do not unintentionally create clipping contexts (e.g., avoid/override problematic overflow on layout wrappers) so menus inside tabs/dialogs are not cut off."
+          "description": "Remove all alert(...) validation and implement inline validation state. Use existing shadcn-ui components (e.g., Alert) to display a form-level validation summary and/or per-field helper/error text within the page; ensure errors clear as the user fixes inputs and that calculation only runs when valid. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Apply a cohesive refreshed gold/charcoal visual theme across the entire UI (tabs, forms, tables, dialogs, admin screens).",
+      "summary": "Deduplicate pip value logic by making riskCalculator.ts delegate to the shared pipValues utility.",
       "acceptanceCriteria": [
-        "Primary/secondary colors, background, borders, and typography are updated consistently across all tabs (Journal, Calculator, Mistakes, Profile, Admin).",
-        "Updated theme preserves accessibility (text contrast remains readable in light and dark mode if supported).",
-        "No new UI regressions: layouts remain responsive, and key screens (forms, lists, dialogs) remain usable on mobile widths."
+        "There is a single source of truth for the default pip values (the table in `frontend/src/lib/pipValues.ts`).",
+        "`frontend/src/lib/riskCalculator.ts` no longer defines its own pip values table and instead delegates to the shared pip-value helper.",
+        "The calculator continues to return the same lot-size results for the same inputs as before the refactor."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/index.css",
+          "path": "frontend/src/lib/riskCalculator.ts",
           "operation": "modify",
-          "description": "Replace the current emerald-driven design tokens with a gold/charcoal palette (light + dark) by updating CSS variables (`--primary`, `--background`, `--card`, `--border`, charts, etc.) and any related global surface/typography tweaks so shadcn/ui components inherit the refreshed theme consistently."
+          "description": "Remove the local hardcoded pip values table and update getPipValue (or its equivalent) to delegate to the shared helper in frontend/src/lib/pipValues.ts, preserving current null/\"custom required\" behavior for XAUUSD/XAGUSD/OTHER and keeping lot-size calculation results unchanged."
         },
         {
-          "path": "frontend/tailwind.config.js",
+          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
           "operation": "modify",
-          "description": "Verify Tailwind theme token wiring remains consistent with the updated CSS variables (no default blue/purple leakage), and adjust any extended theme settings only as needed to support the refreshed theme across components."
+          "description": "Update imports/usages as needed so the calculator continues to obtain pip values via the refactored shared pip-value logic (no duplicated pip tables), without changing existing calculation behavior."
         }
       ]
     },
     {
       "id": "REQ-4",
-      "summary": "Update branding to use the new uploaded-logo-based image and show it in the header and all connecting/loading states.",
+      "summary": "Rename the bottom navigation label for the calculator tab to \"Lot Size\" while keeping tab id/routing unchanged.",
       "acceptanceCriteria": [
-        "A new logo image is added under `frontend/public/assets/generated/` and referenced by `frontend/src/lib/branding.ts` (`LOGO_PATH`).",
-        "Header logo and all existing logo placements (e.g., connecting/initializing/error screens in `frontend/src/App.tsx`) render the new asset without stretching or pixelation.",
-        "Logo loads correctly in production build (no 404)."
+        "The bottom nav shows the calculator tab label as \"Lot Size\" (or \"Lot Size Calc\") instead of \"Calculator\".",
+        "Tapping the tab still switches to the same calculator tab content (no new tab id is introduced)."
       ],
       "file_operations": [
-        {
-          "path": "frontend/src/lib/branding.ts",
-          "operation": "modify",
-          "description": "Update `LOGO_PATH` to reference the new logo asset at `frontend/public/assets/generated/app-logo-yug-v2.dim_1024x1024.png` and keep branding constants as the single source of truth."
-        },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Verify all logo placements (header + connecting/initializing/error states) continue to use `LOGO_PATH` with appropriate sizing (`object-contain`) so the new logo renders crisply without distortion."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Add the newly generated logo/icon images as static frontend assets and reference them directly (no backend proxy).",
-      "acceptanceCriteria": [
-        "Generated image files exist at `frontend/public/assets/generated/*` with the specified filenames.",
-        "`LOGO_PATH` points to a file within `/assets/generated/` and renders correctly at runtime."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/public/assets/generated/app-logo-yug-v2.dim_1024x1024.png",
-          "operation": "create",
-          "description": "Add the generated square app logo asset exactly as specified: `frontend/public/assets/generated/app-logo-yug-v2.dim_1024x1024.png`."
-        },
-        {
-          "path": "frontend/public/assets/generated/app-icon-yug-v2.dim_512x512.png",
-          "operation": "create",
-          "description": "Add the generated square app icon variant exactly as specified: `frontend/public/assets/generated/app-icon-yug-v2.dim_512x512.png`."
-        },
-        {
-          "path": "frontend/index.html",
-          "operation": "modify",
-          "description": "Update icon link tags to use the new static asset(s) under `frontend/public/assets/generated/` (e.g., reference `app-icon-yug-v2.dim_512x512.png` where appropriate) to ensure branding assets are served directly by the frontend and do not 404 in production."
+          "description": "Change the label for the existing tab with id `calculator` from \"Calculator\" to \"Lot Size\" (or equivalent) while leaving the tab id and navigation structure unchanged."
         }
       ]
     }

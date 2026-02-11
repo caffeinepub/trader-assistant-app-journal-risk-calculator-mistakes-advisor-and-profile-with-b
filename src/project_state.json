@@ -1,52 +1,40 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App needs rebuild; UI has overlapping/visibility issues in options menus and user wants UI and logo updated.",
+  "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [
-    "UI overlap issue: opening other options causes elements to overlap and become unclear/not fully visible.",
-    "Build/generation failure and draft expiry requiring rebuild."
-  ],
-  "isFixRequest": true,
-  "imageRequirements": "## Required Images\n- Square app logo based on the uploaded gold/black trading mark and text (app-logo-yug-v2.dim_1024x1024.png)\n- Square app icon variant derived from the same mark, simplified for small sizes (app-icon-yug-v2.dim_512x512.png)",
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-rebuild-the-application-and-ensure-it-deploys-successfully-no-build-runtime-errors-after-the-previous-draft-expiry-generation-failure",
-      "title": "Rebuild the application and ensure it deploys successfully (no build/runtime errors) after the previous draft expiry/generation failure.",
+      "id": "feature-update-the-calculator-tab-ui-copy-and-structure-so-it-presents-as-an-account-lot-size-calculator-instead-of-risk-calculator-including-the-page-title-descriptions-button-text-and-results-labels-while-keeping-the-current-inputs-account-type-risk-mode-balance-risk-fixed-risk-trading-pair-custom-pip-value-entry-price-stop-loss-and-calculation-behavior",
+      "title": "Update the Calculator tab UI copy and structure so it presents as an \"Account Lot Size Calculator\" (instead of \"Risk Calculator\"), including the page title, descriptions, button text, and results labels, while keeping the current inputs (account type, risk mode, balance, risk %, fixed risk, trading pair, custom pip value, entry price, stop loss) and calculation behavior.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-fix-the-ui-overlap-visibility-issue-when-opening-options-menus-so-that-popovers-dropdowns-and-other-option-panels-are-always-fully-visible-and-not-covered-by-fixed-ui-e-g-bottom-navigation-on-mobile-and-desktop",
-      "title": "Fix the UI overlap/visibility issue when opening options/menus so that popovers, dropdowns, and other option panels are always fully visible and not covered by fixed UI (e.g., bottom navigation) on mobile and desktop.",
+      "id": "feature-replace-all-browser-alert-validation-in-the-lot-size-calculator-with-inline-form-validation-ui-e-g-an-alert-component-and-or-per-field-helper-text-so-missing-invalid-inputs-are-shown-within-the-page-and-do-not-trigger-native-alert-popups",
+      "title": "Replace all browser `alert(...)` validation in the lot size calculator with inline form validation UI (e.g., an Alert component and/or per-field helper text), so missing/invalid inputs are shown within the page and do not trigger native alert popups.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-the-app-ui-with-a-cohesive-refreshed-visual-theme-colors-typography-spacing-surfaces-and-apply-it-consistently-across-the-header-tabs-forms-tables-dialogs-and-admin-screens-use-a-distinct-gold-charcoal-theme-inspired-by-the-provided-logo-screenshot-avoid-default-blue-purple-styling",
-      "title": "Update the app UI with a cohesive refreshed visual theme (colors, typography, spacing, surfaces) and apply it consistently across the header, tabs, forms, tables, dialogs, and admin screens. Use a distinct gold/charcoal theme inspired by the provided logo screenshot (avoid default blue/purple styling).",
+      "id": "feature-deduplicate-pip-value-logic-by-making-the-lot-size-calculator-use-the-existing-shared-pip-value-utility-frontend-src-lib-pipvalues-ts-instead-of-maintaining-a-separate-hardcoded-pip-table-in-frontend-src-lib-riskcalculator-ts-update-imports-usages-accordingly",
+      "title": "Deduplicate pip value logic by making the lot size calculator use the existing shared pip-value utility (`frontend/src/lib/pipValues.ts`) instead of maintaining a separate hardcoded pip table in `frontend/src/lib/riskCalculator.ts`. Update imports/usages accordingly.",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-replace-update-the-application-logo-using-the-uploaded-image-as-the-visual-reference-update-the-app-branding-so-the-header-and-loading-connecting-states-display-the-new-logo-asset",
-      "title": "Replace/update the application logo using the uploaded image as the visual reference. Update the app branding so the header and loading/connecting states display the new logo asset.",
+      "id": "feature-update-the-bottom-navigation-label-for-the-calculator-tab-from-the-generic-calculator-to-lot-size-or-equivalent-while-keeping-routing-tab-id-behavior-unchanged-tab-id-remains-calculator",
+      "title": "Update the bottom navigation label for the calculator tab from the generic \"Calculator\" to \"Lot Size\" (or equivalent) while keeping routing/tab id behavior unchanged (tab id remains `calculator`).",
       "reqIds": [
         "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-the-newly-generated-logo-image-s-as-static-assets-in-frontend-public-assets-generated-and-ensure-the-ui-references-them-directly-do-not-proxy-images-through-the-backend",
-      "title": "Add the newly generated logo image(s) as static assets in `frontend/public/assets/generated` and ensure the UI references them directly (do not proxy images through the backend).",
-      "reqIds": [
-        "REQ-5"
       ],
       "version": 1
     }
@@ -54,24 +42,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Fix overlapping/visibility issue when opening options/menus (elements not clearly visible due to overlap).",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Update the app UI and replace/update the logo.",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Rebuild/regenerate the app after previous generation failure/expiry.",
+      "summary": "Convert the current implementation to match the older version for an account lot size calculator",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Rebuild app; fix overlapping option menus; refresh UI and update logo",
+  "projectName": "Convert Calculator tab to Account Lot Size Calculator (match older version)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

@@ -13,6 +13,16 @@ export interface BackendDiagnostics {
   isPossiblyMisconfigured: boolean;
 }
 
+// Known placeholder tokens that indicate misconfiguration
+const PLACEHOLDER_TOKENS = ['unknown', '__BACKEND_CANISTER_ID__'];
+
+/**
+ * Checks if a canister ID is a known placeholder/invalid value
+ */
+function isPlaceholderCanisterId(id: string): boolean {
+  return !id || id.trim() === '' || PLACEHOLDER_TOKENS.includes(id);
+}
+
 /**
  * Attempts to extract canister ID from the current environment
  */
@@ -22,22 +32,25 @@ function getCanisterIdFromEnvironment(): { id: string; source: string; isPlaceho
     const globals = window as any;
     
     // Check for runtime-injected canister ID from env.json loader (highest priority for production)
-    if (globals.BACKEND_CANISTER_ID && globals.BACKEND_CANISTER_ID !== 'unknown') {
+    if (globals.BACKEND_CANISTER_ID) {
       const source = globals.__CANISTER_ID_SOURCE__ || 'window.BACKEND_CANISTER_ID';
-      return { id: globals.BACKEND_CANISTER_ID, source, isPlaceholder: false };
+      const isPlaceholder = isPlaceholderCanisterId(globals.BACKEND_CANISTER_ID);
+      return { id: globals.BACKEND_CANISTER_ID, source, isPlaceholder };
     }
     
     // Check for explicit canister ID in window (dfx development)
-    if (globals.canisterId && globals.canisterId !== 'unknown') {
-      return { id: globals.canisterId, source: 'window.canisterId', isPlaceholder: false };
+    if (globals.canisterId) {
+      const isPlaceholder = isPlaceholderCanisterId(globals.canisterId);
+      return { id: globals.canisterId, source: 'window.canisterId', isPlaceholder };
     }
     
     // Check for canister ID in meta tags (production builds may inject this)
     const metaCanisterId = document.querySelector('meta[name="canister-id"]');
     if (metaCanisterId) {
       const content = metaCanisterId.getAttribute('content');
-      if (content && content !== 'unknown') {
-        return { id: content, source: 'meta[name="canister-id"]', isPlaceholder: false };
+      if (content) {
+        const isPlaceholder = isPlaceholderCanisterId(content);
+        return { id: content, source: 'meta[name="canister-id"]', isPlaceholder };
       }
     }
   }
@@ -46,8 +59,9 @@ function getCanisterIdFromEnvironment(): { id: string; source: string; isPlaceho
   const hostname = window.location.hostname;
   if (hostname.includes('.ic0.app') || hostname.includes('.icp0.io')) {
     const parts = hostname.split('.');
-    if (parts.length > 0 && parts[0] && parts[0] !== 'unknown') {
-      return { id: parts[0], source: 'hostname (IC domain)', isPlaceholder: false };
+    if (parts.length > 0 && parts[0]) {
+      const isPlaceholder = isPlaceholderCanisterId(parts[0]);
+      return { id: parts[0], source: 'hostname (IC domain)', isPlaceholder };
     }
   }
   
@@ -97,11 +111,11 @@ export function getBackendDiagnostics(): BackendDiagnostics {
   const deploymentType = getDeploymentType();
   
   // Detect possible misconfiguration:
-  // - Placeholder/unknown canister ID in production
-  // - Caffeine production without proper canister ID
+  // - Placeholder/unknown canister ID in production (non-local)
+  // - Caffeine or IC production without proper canister ID
   const isPossiblyMisconfigured = 
     canisterInfo.isPlaceholder && 
-    (deploymentType === 'caffeine-production' || deploymentType === 'ic-production');
+    deploymentType !== 'local';
   
   return {
     canisterId: canisterInfo.id,

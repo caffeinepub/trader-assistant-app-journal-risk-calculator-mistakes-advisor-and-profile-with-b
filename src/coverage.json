@@ -1,98 +1,71 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T16:27:47.828Z",
+  "generatedAt": "2026-02-11T01:48:50.742Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
-    "implemented": 5,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Rebuild the application and ensure it deploys successfully (no build/runtime errors) after the previous draft expiry/generation failure.",
+        "summary": "Update the Calculator tab UI copy and structure so it presents as an \"Account Lot Size Calculator\" (instead of \"Risk Calculator\"), including the page title, descriptions, button text, and results labels, while keeping the current inputs (account type, risk mode, balance, risk %, fixed risk, trading pair, custom pip value, entry price, stop loss) and calculation behavior.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Fix the UI overlap/visibility issue when opening options/menus so that popovers, dropdowns, and other option panels are always fully visible and not covered by fixed UI (e.g., bottom navigation) on mobile and desktop.",
+        "summary": "Replace all browser `alert(...)` validation in the lot size calculator with inline form validation UI (e.g., an Alert component and/or per-field helper text), so missing/invalid inputs are shown within the page and do not trigger native alert popups.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/index.css",
-          "frontend/src/components/navigation/BottomNav.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/index.css",
-          "frontend/src/components/navigation/BottomNav.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Update the app UI with a cohesive refreshed visual theme (colors, typography, spacing, surfaces) and apply it consistently across the header, tabs, forms, tables, dialogs, and admin screens. Use a distinct gold/charcoal theme inspired by the provided logo screenshot (avoid default blue/purple styling).",
+        "summary": "Deduplicate pip value logic by making the lot size calculator use the existing shared pip-value utility (`frontend/src/lib/pipValues.ts`) instead of maintaining a separate hardcoded pip table in `frontend/src/lib/riskCalculator.ts`. Update imports/usages accordingly.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/index.css",
-          "frontend/tailwind.config.js"
+          "frontend/src/lib/riskCalculator.ts",
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/index.css",
-          "frontend/tailwind.config.js"
+          "frontend/src/lib/riskCalculator.ts",
+          "frontend/src/tabs/RiskCalculatorTab.tsx"
         ]
       },
       {
         "id": "REQ-4",
-        "summary": "Replace/update the application logo using the uploaded image as the visual reference. Update the app branding so the header and loading/connecting states display the new logo asset.",
+        "summary": "Update the bottom navigation label for the calculator tab from the generic \"Calculator\" to \"Lot Size\" (or equivalent) while keeping routing/tab id behavior unchanged (tab id remains `calculator`).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/branding.ts",
           "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/lib/branding.ts",
           "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Add the newly generated logo image(s) as static assets in `frontend/public/assets/generated` and ensure the UI references them directly (do not proxy images through the backend).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/public/assets/generated/app-logo-yug-v2.dim_1024x1024.png",
-          "frontend/public/assets/generated/app-icon-yug-v2.dim_512x512.png",
-          "frontend/index.html"
-        ],
-        "matchedFiles": [
-          "frontend/public/assets/generated/app-logo-yug-v2.dim_1024x1024.png",
-          "frontend/public/assets/generated/app-icon-yug-v2.dim_512x512.png",
-          "frontend/index.html"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/index.html",
-    "frontend/public/assets/generated/app-icon-yug-v2.dim_512x512.png",
-    "frontend/public/assets/generated/app-logo-yug-v2.dim_1024x1024.png",
     "frontend/src/App.tsx",
-    "frontend/src/components/navigation/BottomNav.tsx",
-    "frontend/src/index.css",
-    "frontend/src/lib/branding.ts",
-    "frontend/tailwind.config.js",
+    "frontend/src/lib/riskCalculator.ts",
+    "frontend/src/tabs/RiskCalculatorTab.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

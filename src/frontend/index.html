@@ -40,7 +40,13 @@
         // Resilient env loader: fetch /env.json and inject window.BACKEND_CANISTER_ID
         // If the file is missing or unreadable, continue loading the app (no hard crash)
         
-        function loadEnvAndStartApp() {
+        const PLACEHOLDER_TOKENS = ['unknown', '__BACKEND_CANISTER_ID__'];
+        
+        function isValidCanisterId(id) {
+          return id && !PLACEHOLDER_TOKENS.includes(id) && id.trim() !== '';
+        }
+        
+        function loadEnvConfig() {
           fetch('/env.json')
             .then(function(response) {
               if (!response.ok) {
@@ -51,36 +57,31 @@
             })
             .then(function(envData) {
               if (envData && envData.BACKEND_CANISTER_ID) {
-                window.BACKEND_CANISTER_ID = envData.BACKEND_CANISTER_ID;
-                window.__CANISTER_ID_SOURCE__ = 'env.json';
-                console.log('Backend canister ID loaded from env.json:', envData.BACKEND_CANISTER_ID);
+                if (isValidCanisterId(envData.BACKEND_CANISTER_ID)) {
+                  window.BACKEND_CANISTER_ID = envData.BACKEND_CANISTER_ID;
+                  window.__CANISTER_ID_SOURCE__ = 'env.json';
+                  console.log('Backend canister ID loaded from env.json:', envData.BACKEND_CANISTER_ID);
+                } else {
+                  console.warn('env.json contains placeholder/invalid BACKEND_CANISTER_ID:', envData.BACKEND_CANISTER_ID);
+                  window.__CANISTER_ID_SOURCE__ = 'env.json (invalid/placeholder)';
+                }
               } else {
                 console.warn('env.json exists but does not contain BACKEND_CANISTER_ID');
               }
             })
             .catch(function(error) {
               console.warn('Failed to load env.json:', error.message);
-            })
-            .finally(function() {
-              // Always load the app, even if env.json fails
-              var script = document.createElement('script');
-              script.type = 'module';
-              script.src = '/src/main.tsx';
-              document.body.appendChild(script);
             });
         }
 
-        // Start the env loader when DOM is ready
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', loadEnvAndStartApp);
-        } else {
-          loadEnvAndStartApp();
-        }
+        // Load env config immediately (non-blocking)
+        loadEnvConfig();
       })();
     </script>
   </head>
   <body>
     <div id="root"></div>
-    <!-- App script is loaded dynamically by the env loader above -->
+    <!-- Vite will inject the bundled script here in production -->
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

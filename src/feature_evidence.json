@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-rebuild-the-application-and-ensure-it-deploys-successfully-no-build-runtime-errors-after-the-previous-draft-expiry-generation-failure",
-      "featureTitle": "Rebuild the application and ensure it deploys successfully (no build/runtime errors) after the previous draft expiry/generation failure.",
+      "featureId": "feature-update-the-calculator-tab-ui-copy-and-structure-so-it-presents-as-an-account-lot-size-calculator-instead-of-risk-calculator-including-the-page-title-descriptions-button-text-and-results-labels-while-keeping-the-current-inputs-account-type-risk-mode-balance-risk-fixed-risk-trading-pair-custom-pip-value-entry-price-stop-loss-and-calculation-behavior",
+      "featureTitle": "Update the Calculator tab UI copy and structure so it presents as an \"Account Lot Size Calculator\" (instead of \"Risk Calculator\"), including the page title, descriptions, button text, and results labels, while keeping the current inputs (account type, risk mode, balance, risk %, fixed risk, trading pair, custom pip value, entry price, stop loss) and calculation behavior.",
       "files": [
-        "frontend/src/App.tsx"
+        "frontend/src/tabs/RiskCalculatorTab.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,12 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-fix-the-ui-overlap-visibility-issue-when-opening-options-menus-so-that-popovers-dropdowns-and-other-option-panels-are-always-fully-visible-and-not-covered-by-fixed-ui-e-g-bottom-navigation-on-mobile-and-desktop",
-      "featureTitle": "Fix the UI overlap/visibility issue when opening options/menus so that popovers, dropdowns, and other option panels are always fully visible and not covered by fixed UI (e.g., bottom navigation) on mobile and desktop.",
+      "featureId": "feature-replace-all-browser-alert-validation-in-the-lot-size-calculator-with-inline-form-validation-ui-e-g-an-alert-component-and-or-per-field-helper-text-so-missing-invalid-inputs-are-shown-within-the-page-and-do-not-trigger-native-alert-popups",
+      "featureTitle": "Replace all browser `alert(...)` validation in the lot size calculator with inline form validation UI (e.g., an Alert component and/or per-field helper text), so missing/invalid inputs are shown within the page and do not trigger native alert popups.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/navigation/BottomNav.tsx",
-        "frontend/src/index.css"
+        "frontend/src/tabs/RiskCalculatorTab.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -44,11 +42,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-app-ui-with-a-cohesive-refreshed-visual-theme-colors-typography-spacing-surfaces-and-apply-it-consistently-across-the-header-tabs-forms-tables-dialogs-and-admin-screens-use-a-distinct-gold-charcoal-theme-inspired-by-the-provided-logo-screenshot-avoid-default-blue-purple-styling",
-      "featureTitle": "Update the app UI with a cohesive refreshed visual theme (colors, typography, spacing, surfaces) and apply it consistently across the header, tabs, forms, tables, dialogs, and admin screens. Use a distinct gold/charcoal theme inspired by the provided logo screenshot (avoid default blue/purple styling).",
+      "featureId": "feature-deduplicate-pip-value-logic-by-making-the-lot-size-calculator-use-the-existing-shared-pip-value-utility-frontend-src-lib-pipvalues-ts-instead-of-maintaining-a-separate-hardcoded-pip-table-in-frontend-src-lib-riskcalculator-ts-update-imports-usages-accordingly",
+      "featureTitle": "Deduplicate pip value logic by making the lot size calculator use the existing shared pip-value utility (`frontend/src/lib/pipValues.ts`) instead of maintaining a separate hardcoded pip table in `frontend/src/lib/riskCalculator.ts`. Update imports/usages accordingly.",
       "files": [
-        "frontend/src/index.css",
-        "frontend/tailwind.config.js"
+        "frontend/src/lib/riskCalculator.ts",
+        "frontend/src/tabs/RiskCalculatorTab.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -65,11 +63,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-replace-update-the-application-logo-using-the-uploaded-image-as-the-visual-reference-update-the-app-branding-so-the-header-and-loading-connecting-states-display-the-new-logo-asset",
-      "featureTitle": "Replace/update the application logo using the uploaded image as the visual reference. Update the app branding so the header and loading/connecting states display the new logo asset.",
+      "featureId": "feature-update-the-bottom-navigation-label-for-the-calculator-tab-from-the-generic-calculator-to-lot-size-or-equivalent-while-keeping-routing-tab-id-behavior-unchanged-tab-id-remains-calculator",
+      "featureTitle": "Update the bottom navigation label for the calculator tab from the generic \"Calculator\" to \"Lot Size\" (or equivalent) while keeping routing/tab id behavior unchanged (tab id remains `calculator`).",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/lib/branding.ts"
+        "frontend/src/App.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -82,26 +79,6 @@
       ],
       "testIds": [
         "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-the-newly-generated-logo-image-s-as-static-assets-in-frontend-public-assets-generated-and-ensure-the-ui-references-them-directly-do-not-proxy-images-through-the-backend",
-      "featureTitle": "Add the newly generated logo image(s) as static assets in `frontend/public/assets/generated` and ensure the UI references them directly (do not proxy images through the backend).",
-      "files": [
-        "frontend/index.html"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
       ],
       "confidence": "high"
     }
