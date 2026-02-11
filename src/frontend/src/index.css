@@ -82,32 +82,10 @@
   overflow-y: auto;
   /* Ensure full viewport height coverage */
   min-height: 100%;
-  /* Add bottom padding for mobile to prevent BottomNav overlap */
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-/* Mobile-specific bottom spacing for BottomNav */
-@media (max-width: 1024px) {
-  .app-content {
-    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
-  }
 }
 
 .app-footer {
   flex-shrink: 0;
-  /* Hide footer on mobile when BottomNav is visible */
-  display: none;
-}
-
-@media (min-width: 1024px) {
-  .app-footer {
-    display: block;
-  }
-}
-
-/* Safe area bottom for BottomNav */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Text Wrapping Utilities */
@@ -131,19 +109,8 @@
   }
 }
 
-/* Increase z-index for Radix portals to render above BottomNav and other content */
+/* Increase z-index for Radix portals to render above BottomNav */
 [data-radix-popper-content-wrapper],
 [data-radix-portal] {
   z-index: 100 !important;
-}
-
-/* Ensure Select content specifically has proper stacking */
-[data-radix-select-content] {
-  z-index: 100 !important;
-  position: fixed !important;
-}
-
-/* Ensure Select viewport scrolls properly */
-[data-radix-select-viewport] {
-  max-height: var(--radix-select-content-available-height);
 }

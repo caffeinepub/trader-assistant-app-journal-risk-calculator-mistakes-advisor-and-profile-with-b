@@ -215,9 +215,9 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getActiveDiscounts' : IDL.Func([], [IDL.Vec(Discount)], ['query']),
-  'getAllMistakes' : IDL.Func([], [IDL.Vec(MistakeEntry)], []),
-  'getAllTradeDates' : IDL.Func([], [IDL.Vec(Time)], []),
-  'getAllTrades' : IDL.Func([], [IDL.Vec(TradeEntry)], []),
+  'getAllMistakes' : IDL.Func([], [IDL.Vec(MistakeEntry)], ['query']),
+  'getAllTradeDates' : IDL.Func([], [IDL.Vec(Time)], ['query']),
+  'getAllTrades' : IDL.Func([], [IDL.Vec(TradeEntry)], ['query']),
   'getAllUserData' : IDL.Func(
       [],
       [
@@ -251,7 +251,7 @@ export const idlService = IDL.Service({
           'accuracy' : IDL.Float64,
         }),
       ],
-      [],
+      ['query'],
     ),
   'getCallerPlan' : IDL.Func(
       [],
@@ -264,17 +264,21 @@ export const idlService = IDL.Service({
           })
         ),
       ],
-      [],
+      ['query'],
     ),
-  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], []),
+  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
-  'getDailyProfitForDate' : IDL.Func([Time], [IDL.Float64], []),
+  'getDailyProfitForDate' : IDL.Func([Time], [IDL.Float64], ['query']),
   'getEnabledPaymentMethods' : IDL.Func(
       [],
       [IDL.Vec(PaymentMethod)],
       ['query'],
     ),
-  'getTradesByDateRange' : IDL.Func([Time, Time], [IDL.Vec(TradeEntry)], []),
+  'getTradesByDateRange' : IDL.Func(
+      [Time, Time],
+      [IDL.Vec(TradeEntry)],
+      ['query'],
+    ),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -283,7 +287,7 @@ export const idlService = IDL.Service({
   'grantAdminRole' : IDL.Func([IDL.Principal], [], []),
   'healthCheck' : IDL.Func([], [IDL.Text], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'isLockedAdmin' : IDL.Func([], [IDL.Bool], []),
+  'isLockedAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isUserRegistered' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
   'revokeAdminRole' : IDL.Func([IDL.Principal], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
@@ -517,9 +521,9 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getActiveDiscounts' : IDL.Func([], [IDL.Vec(Discount)], ['query']),
-    'getAllMistakes' : IDL.Func([], [IDL.Vec(MistakeEntry)], []),
-    'getAllTradeDates' : IDL.Func([], [IDL.Vec(Time)], []),
-    'getAllTrades' : IDL.Func([], [IDL.Vec(TradeEntry)], []),
+    'getAllMistakes' : IDL.Func([], [IDL.Vec(MistakeEntry)], ['query']),
+    'getAllTradeDates' : IDL.Func([], [IDL.Vec(Time)], ['query']),
+    'getAllTrades' : IDL.Func([], [IDL.Vec(TradeEntry)], ['query']),
     'getAllUserData' : IDL.Func(
         [],
         [
@@ -553,7 +557,7 @@ export const idlFactory = ({ IDL }) => {
             'accuracy' : IDL.Float64,
           }),
         ],
-        [],
+        ['query'],
       ),
     'getCallerPlan' : IDL.Func(
         [],
@@ -566,17 +570,21 @@ export const idlFactory = ({ IDL }) => {
             })
           ),
         ],
-        [],
+        ['query'],
       ),
-    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], []),
+    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
-    'getDailyProfitForDate' : IDL.Func([Time], [IDL.Float64], []),
+    'getDailyProfitForDate' : IDL.Func([Time], [IDL.Float64], ['query']),
     'getEnabledPaymentMethods' : IDL.Func(
         [],
         [IDL.Vec(PaymentMethod)],
         ['query'],
       ),
-    'getTradesByDateRange' : IDL.Func([Time, Time], [IDL.Vec(TradeEntry)], []),
+    'getTradesByDateRange' : IDL.Func(
+        [Time, Time],
+        [IDL.Vec(TradeEntry)],
+        ['query'],
+      ),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
@@ -585,7 +593,7 @@ export const idlFactory = ({ IDL }) => {
     'grantAdminRole' : IDL.Func([IDL.Principal], [], []),
     'healthCheck' : IDL.Func([], [IDL.Text], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'isLockedAdmin' : IDL.Func([], [IDL.Bool], []),
+    'isLockedAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isUserRegistered' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'revokeAdminRole' : IDL.Func([IDL.Principal], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),

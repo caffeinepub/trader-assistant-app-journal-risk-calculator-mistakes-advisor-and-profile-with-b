@@ -1,73 +1,65 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Convert Calculator tab to Account Lot Size Calculator (match older version)",
+  "title": "Frontend rollback alignment and restore-build stabilization for Version 35",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Update the calculator tab UI copy/structure to present as an Account Lot Size Calculator while keeping existing inputs and calculation behavior.",
+      "summary": "Revert the frontend UI/behavior to match the previously working Version 35 experience (remove Version 38+ UI changes).",
       "acceptanceCriteria": [
-        "When viewing the Calculator tab, the header title reads \"Lot Size Calculator\" (or \"Account Lot Size Calculator\") and no longer says \"Risk Calculator\".",
-        "The primary action button text uses lot-size wording (e.g., \"Calculate Lot Size\") and results wording refers to \"Lot Size\" / \"Position Size\" consistently.",
-        "All user-facing text introduced/changed by this update is in English."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
-          "operation": "modify",
-          "description": "Update the calculator view’s English UI copy and layout to match an \"Account Lot Size Calculator\" presentation (header title/description, section titles/descriptions, button text, and result labels) while keeping the same inputs and calculation behavior intact."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Replace native browser alerts with inline validation UI in the lot size calculator.",
-      "acceptanceCriteria": [
-        "Submitting with missing required fields does not open a browser alert dialog.",
-        "Validation messages are shown in the calculator view and clearly indicate what must be fixed (e.g., missing balance, missing pair, missing custom pip value for XAUUSD/XAGUSD/OTHER, invalid stop loss pips).",
-        "Once inputs are corrected, validation messages clear and calculation can proceed."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
-          "operation": "modify",
-          "description": "Remove all alert(...) validation and implement inline validation state. Use existing shadcn-ui components (e.g., Alert) to display a form-level validation summary and/or per-field helper/error text within the page; ensure errors clear as the user fixes inputs and that calculation only runs when valid. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Deduplicate pip value logic by making riskCalculator.ts delegate to the shared pipValues utility.",
-      "acceptanceCriteria": [
-        "There is a single source of truth for the default pip values (the table in `frontend/src/lib/pipValues.ts`).",
-        "`frontend/src/lib/riskCalculator.ts` no longer defines its own pip values table and instead delegates to the shared pip-value helper.",
-        "The calculator continues to return the same lot-size results for the same inputs as before the refactor."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/riskCalculator.ts",
-          "operation": "modify",
-          "description": "Remove the local hardcoded pip values table and update getPipValue (or its equivalent) to delegate to the shared helper in frontend/src/lib/pipValues.ts, preserving current null/\"custom required\" behavior for XAUUSD/XAGUSD/OTHER and keeping lot-size calculation results unchanged."
-        },
-        {
-          "path": "frontend/src/tabs/RiskCalculatorTab.tsx",
-          "operation": "modify",
-          "description": "Update imports/usages as needed so the calculator continues to obtain pip values via the refactored shared pip-value logic (no duplicated pip tables), without changing existing calculation behavior."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Rename the bottom navigation label for the calculator tab to \"Lot Size\" while keeping tab id/routing unchanged.",
-      "acceptanceCriteria": [
-        "The bottom nav shows the calculator tab label as \"Lot Size\" (or \"Lot Size Calc\") instead of \"Calculator\".",
-        "Tapping the tab still switches to the same calculator tab content (no new tab id is introduced)."
+        "After deployment, the running app reflects the same functionality and UI as Version 35 (no Version 38+ changes remain).",
+        "No build-time or deploy-time errors occur during the restore attempt."
       ],
       "file_operations": [
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Change the label for the existing tab with id `calculator` from \"Calculator\" to \"Lot Size\" (or equivalent) while leaving the tab id and navigation structure unchanged."
+          "description": "Rollback Version 38+ UI/behavior changes in the main app shell (connection/initialization states, tab visibility/ordering, header/footer content) to match the Version 35 UX. Ensure any removed functionality is not referenced anywhere to avoid runtime errors."
+        },
+        {
+          "path": "frontend/src/lib/branding.ts",
+          "operation": "modify",
+          "description": "Restore Version 35 branding constants (name/tagline/logo path) so the header/logo render matches Version 35. If using a generated asset, point to the exact static file path under frontend/public/assets/generated/. Ensure the chosen values match Version 35."
+        },
+        {
+          "path": "frontend/index.html",
+          "operation": "modify",
+          "description": "Restore Version 35 head metadata and icons (favicon/apple-touch-icon/title/description) to match Version 35. Ensure any icon references resolve to existing assets and match Version 35."
+        },
+        {
+          "path": "frontend/src/components/navigation/BottomNav.tsx",
+          "operation": "modify",
+          "description": "Adjust navigation/tab rendering (labels/icons/active behavior) to match Version 35 navigation behavior and ensure it stays wired to the tabs used in frontend/src/App.tsx."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Fix frontend restore/build failures so a Version 35 restore can compile and deploy successfully, with clear actionable configuration errors when prerequisites are missing.",
+      "acceptanceCriteria": [
+        "Triggering a restore to Version 35 completes successfully end-to-end (build + deploy).",
+        "If any restore preconditions are required, the system surfaces a clear, actionable error message explaining what is missing instead of a generic implementation failure."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useActorWithStatus.ts",
+          "operation": "modify",
+          "description": "Remove or safely guard any calls that can break a Version 35 restore build (e.g., invoking backend functions not present/typed in the current frontend interface). Ensure actor initialization/health check still works and failures are converted into actionable errors rather than unhandled implementation errors."
+        },
+        {
+          "path": "frontend/src/lib/backendConnectionErrors.ts",
+          "operation": "modify",
+          "description": "Ensure restore preconditions (especially missing/placeholder BACKEND_CANISTER_ID) produce a clear, actionable message suitable for deploy diagnostics (what is missing, where it should come from, and what to do next), and that these errors do not trigger infinite/pointless retries."
+        },
+        {
+          "path": "frontend/src/lib/backendDiagnostics.ts",
+          "operation": "modify",
+          "description": "Harden canister-id discovery so Version 35 restores reliably detect configuration issues and report the canister ID source consistently across local/IC/Caffeine deployments."
+        },
+        {
+          "path": "frontend/public/env.json",
+          "operation": "modify",
+          "description": "Keep env.json compatible with Version 35 restore assumptions (runtime canister ID injection). Ensure placeholder behavior is supported and produces the actionable error messaging in-app (not a generic implementation failure)."
         }
       ]
     }

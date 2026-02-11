@@ -1,6 +1,6 @@
-import { BookOpen, Calculator, AlertTriangle, User, Shield } from 'lucide-react';
+import { BookOpen, Calculator, AlertTriangle, User } from 'lucide-react';
 
-type TabType = 'journal' | 'calculator' | 'mistakes' | 'profile' | 'admin';
+type TabType = 'journal' | 'calculator' | 'mistakes' | 'profile';
 
 interface Tab {
   id: TabType;
@@ -17,7 +17,7 @@ interface BottomNavProps {
 
 export default function BottomNav({ tabs, activeTab, onTabChange }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-sm safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-sm safe-area-bottom">
       <div className="container mx-auto px-2">
         <div className="flex items-center justify-around">
           {tabs.map((tab) => {

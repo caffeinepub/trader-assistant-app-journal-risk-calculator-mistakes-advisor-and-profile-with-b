@@ -2,11 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/assets/generated/app-icon-yug-v2.dim_512x512.png" />
-    <link rel="apple-touch-icon" href="/assets/generated/app-icon-yug-v2.dim_512x512.png" />
+    <link rel="icon" type="image/png" href="/assets/generated/favicon-yug.dim_32x32.png" />
+    <link rel="apple-touch-icon" href="/assets/generated/apple-touch-icon-yug.dim_180x180.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Yug Trade Journal - Professional Trading Assistant for tracking trades, managing risk, and learning from mistakes" />
-    <title>Yug Trade Journal - Professional Trading Assistant</title>
+    <meta name="description" content="Yug Trading Journal - Track, Analyze, and Improve Your Trading Performance" />
+    <title>Yug Trading Journal</title>
     
     <!-- Google Fonts - Montserrat for distinctive typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,36 +37,19 @@
     <!-- Runtime environment loader - loads backend canister ID before app starts -->
     <script>
       (function() {
-        // Resilient env loader: fetch /env.json and inject window.BACKEND_CANISTER_ID
-        // If the file is missing or unreadable, continue loading the app (no hard crash)
-        
-        const PLACEHOLDER_TOKENS = ['unknown', '__BACKEND_CANISTER_ID__'];
-        
-        function isValidCanisterId(id) {
-          return id && !PLACEHOLDER_TOKENS.includes(id) && id.trim() !== '';
-        }
-        
         function loadEnvConfig() {
           fetch('/env.json')
             .then(function(response) {
               if (!response.ok) {
-                console.warn('env.json not found or not readable, continuing without runtime config');
+                console.warn('env.json not found, continuing without runtime config');
                 return null;
               }
               return response.json();
             })
             .then(function(envData) {
-              if (envData && envData.BACKEND_CANISTER_ID) {
-                if (isValidCanisterId(envData.BACKEND_CANISTER_ID)) {
-                  window.BACKEND_CANISTER_ID = envData.BACKEND_CANISTER_ID;
-                  window.__CANISTER_ID_SOURCE__ = 'env.json';
-                  console.log('Backend canister ID loaded from env.json:', envData.BACKEND_CANISTER_ID);
-                } else {
-                  console.warn('env.json contains placeholder/invalid BACKEND_CANISTER_ID:', envData.BACKEND_CANISTER_ID);
-                  window.__CANISTER_ID_SOURCE__ = 'env.json (invalid/placeholder)';
-                }
-              } else {
-                console.warn('env.json exists but does not contain BACKEND_CANISTER_ID');
+              if (envData && envData.BACKEND_CANISTER_ID && envData.BACKEND_CANISTER_ID !== '__BACKEND_CANISTER_ID__') {
+                window.BACKEND_CANISTER_ID = envData.BACKEND_CANISTER_ID;
+                console.log('Backend canister ID loaded from env.json');
               }
             })
             .catch(function(error) {
@@ -74,14 +57,12 @@
             });
         }
 
-        // Load env config immediately (non-blocking)
         loadEnvConfig();
       })();
     </script>
   </head>
   <body>
     <div id="root"></div>
-    <!-- Vite will inject the bundled script here in production -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

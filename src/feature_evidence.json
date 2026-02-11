@@ -2,10 +2,13 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-calculator-tab-ui-copy-and-structure-so-it-presents-as-an-account-lot-size-calculator-instead-of-risk-calculator-including-the-page-title-descriptions-button-text-and-results-labels-while-keeping-the-current-inputs-account-type-risk-mode-balance-risk-fixed-risk-trading-pair-custom-pip-value-entry-price-stop-loss-and-calculation-behavior",
-      "featureTitle": "Update the Calculator tab UI copy and structure so it presents as an \"Account Lot Size Calculator\" (instead of \"Risk Calculator\"), including the page title, descriptions, button text, and results labels, while keeping the current inputs (account type, risk mode, balance, risk %, fixed risk, trading pair, custom pip value, entry price, stop loss) and calculation behavior.",
+      "featureId": "feature-restore-the-deployed-application-codebase-to-match-the-previously-working-version-35-state-full-rollback-so-the-app-behavior-and-ui-match-version-35-rather-than-the-current-version",
+      "featureTitle": "Restore the deployed application codebase to match the previously working **Version 35** state (full rollback), so the app behavior and UI match Version 35 rather than the current version.",
       "files": [
-        "frontend/src/tabs/RiskCalculatorTab.tsx"
+        "frontend/index.html",
+        "frontend/src/App.tsx",
+        "frontend/src/components/navigation/BottomNav.tsx",
+        "frontend/src/lib/branding.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,10 +25,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-replace-all-browser-alert-validation-in-the-lot-size-calculator-with-inline-form-validation-ui-e-g-an-alert-component-and-or-per-field-helper-text-so-missing-invalid-inputs-are-shown-within-the-page-and-do-not-trigger-native-alert-popups",
-      "featureTitle": "Replace all browser `alert(...)` validation in the lot size calculator with inline form validation UI (e.g., an Alert component and/or per-field helper text), so missing/invalid inputs are shown within the page and do not trigger native alert popups.",
+      "featureId": "feature-fix-the-restore-rollback-workflow-so-the-version-35-restore-succeeds-the-previous-restore-attempt-failed-ensure-the-build-pipeline-can-complete-a-version-35-restore-without-throwing-an-implementation-error",
+      "featureTitle": "Fix the restore/rollback workflow so the Version 35 restore succeeds (the previous restore attempt failed); ensure the build pipeline can complete a Version 35 restore without throwing an implementation error.",
       "files": [
-        "frontend/src/tabs/RiskCalculatorTab.tsx"
+        "frontend/src/hooks/useActorWithStatus.ts",
+        "frontend/src/lib/backendConnectionErrors.ts",
+        "frontend/src/lib/backendDiagnostics.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,47 +43,6 @@
       ],
       "testIds": [
         "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-deduplicate-pip-value-logic-by-making-the-lot-size-calculator-use-the-existing-shared-pip-value-utility-frontend-src-lib-pipvalues-ts-instead-of-maintaining-a-separate-hardcoded-pip-table-in-frontend-src-lib-riskcalculator-ts-update-imports-usages-accordingly",
-      "featureTitle": "Deduplicate pip value logic by making the lot size calculator use the existing shared pip-value utility (`frontend/src/lib/pipValues.ts`) instead of maintaining a separate hardcoded pip table in `frontend/src/lib/riskCalculator.ts`. Update imports/usages accordingly.",
-      "files": [
-        "frontend/src/lib/riskCalculator.ts",
-        "frontend/src/tabs/RiskCalculatorTab.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-bottom-navigation-label-for-the-calculator-tab-from-the-generic-calculator-to-lot-size-or-equivalent-while-keeping-routing-tab-id-behavior-unchanged-tab-id-remains-calculator",
-      "featureTitle": "Update the bottom navigation label for the calculator tab from the generic \"Calculator\" to \"Lot Size\" (or equivalent) while keeping routing/tab id behavior unchanged (tab id remains `calculator`).",
-      "files": [
-        "frontend/src/App.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
       ],
       "confidence": "high"
     }

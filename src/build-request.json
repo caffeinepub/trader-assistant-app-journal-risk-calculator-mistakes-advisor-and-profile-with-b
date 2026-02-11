@@ -1,90 +1,67 @@
 {
   "kind": "build_request",
-  "title": "Convert Calculator tab to Account Lot Size Calculator (match older version)",
+  "title": "Restore application to Version 35",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the Calculator tab UI copy and structure so it presents as an \"Account Lot Size Calculator\" (instead of \"Risk Calculator\"), including the page title, descriptions, button text, and results labels, while keeping the current inputs (account type, risk mode, balance, risk %, fixed risk, trading pair, custom pip value, entry price, stop loss) and calculation behavior.",
-      "target": "frontend",
+      "text": "Restore the deployed application codebase to match the previously working **Version 35** state (full rollback), so the app behavior and UI match Version 35 rather than the current version.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-6",
+          "msg-12"
         ],
         "quotes": [
-          "Convert this like older one for lot size calculator for account"
+          "Pls give me version 35 back",
+          "Yes"
         ]
       },
       "acceptanceCriteria": [
-        "When viewing the Calculator tab, the header title reads \"Lot Size Calculator\" (or \"Account Lot Size Calculator\") and no longer says \"Risk Calculator\".",
-        "The primary action button text uses lot-size wording (e.g., \"Calculate Lot Size\") and results wording refers to \"Lot Size\" / \"Position Size\" consistently.",
-        "All user-facing text introduced/changed by this update is in English."
+        "After deployment, the running app reflects the same functionality and UI as Version 35 (no Version 38+ changes remain).",
+        "No build-time or deploy-time errors occur during the restore attempt."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Replace all browser `alert(...)` validation in the lot size calculator with inline form validation UI (e.g., an Alert component and/or per-field helper text), so missing/invalid inputs are shown within the page and do not trigger native alert popups.",
-      "target": "frontend",
+      "text": "Fix the restore/rollback workflow so the Version 35 restore succeeds (the previous restore attempt failed); ensure the build pipeline can complete a Version 35 restore without throwing an implementation error.",
+      "target": "unknown",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-8",
+          "msg-6"
         ],
         "quotes": [
-          "Convert this like older one for lot size calculator for account"
+          "Sorry, the AI was unable to implement your request.",
+          "Pls give me version 35 back"
         ]
       },
       "acceptanceCriteria": [
-        "Submitting with missing required fields does not open a browser alert dialog.",
-        "Validation messages are shown in the calculator view and clearly indicate what must be fixed (e.g., missing balance, missing pair, missing custom pip value for XAUUSD/XAGUSD/OTHER, invalid stop loss pips).",
-        "Once inputs are corrected, validation messages clear and calculation can proceed."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Deduplicate pip value logic by making the lot size calculator use the existing shared pip-value utility (`frontend/src/lib/pipValues.ts`) instead of maintaining a separate hardcoded pip table in `frontend/src/lib/riskCalculator.ts`. Update imports/usages accordingly.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "Convert this like older one for lot size calculator for account"
-        ]
-      },
-      "acceptanceCriteria": [
-        "There is a single source of truth for the default pip values (the table in `frontend/src/lib/pipValues.ts`).",
-        "`frontend/src/lib/riskCalculator.ts` no longer defines its own pip values table and instead delegates to the shared pip-value helper.",
-        "The calculator continues to return the same lot-size results for the same inputs as before the refactor."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Update the bottom navigation label for the calculator tab from the generic \"Calculator\" to \"Lot Size\" (or equivalent) while keeping routing/tab id behavior unchanged (tab id remains `calculator`).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "Convert this like older one for lot size calculator for account"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The bottom nav shows the calculator tab label as \"Lot Size\" (or \"Lot Size Calc\") instead of \"Calculator\".",
-        "Tapping the tab still switches to the same calculator tab content (no new tab id is introduced)."
+        "Triggering a restore to Version 35 completes successfully end-to-end (build + deploy).",
+        "If any restore preconditions are required, the system surfaces a clear, actionable error message explaining what is missing instead of a generic implementation failure."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (compose existing Shadcn components instead).",
-    "Respect the existing tab id `calculator` and existing navigation structure (do not introduce new routing frameworks)."
+    "Backend must remain a single Motoko actor in backend/main.mo; only create backend/migration.mo if an upgrade requires state migration.",
+    "Do not modify any files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Adding new backend storage for calculator inputs or results.",
-    "Changing authentication/subscription/entitlement logic for access to the calculator."
+    "Implementing new features or redesigning the app beyond what is necessary to match Version 35.",
+    "Changing authentication providers (Internet Identity must remain the auth solution)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

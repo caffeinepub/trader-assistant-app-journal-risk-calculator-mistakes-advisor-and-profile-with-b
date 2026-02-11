@@ -1,53 +1,32 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "App with a lot size calculator; user is requesting a rollback/restore to Version 35 to match older behavior.",
   "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Restore/rollback to Version 35 failed on a previous build attempt (implementation error)."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-update-the-calculator-tab-ui-copy-and-structure-so-it-presents-as-an-account-lot-size-calculator-instead-of-risk-calculator-including-the-page-title-descriptions-button-text-and-results-labels-while-keeping-the-current-inputs-account-type-risk-mode-balance-risk-fixed-risk-trading-pair-custom-pip-value-entry-price-stop-loss-and-calculation-behavior",
-      "title": "Update the Calculator tab UI copy and structure so it presents as an \"Account Lot Size Calculator\" (instead of \"Risk Calculator\"), including the page title, descriptions, button text, and results labels, while keeping the current inputs (account type, risk mode, balance, risk %, fixed risk, trading pair, custom pip value, entry price, stop loss) and calculation behavior.",
+      "id": "feature-restore-the-deployed-application-codebase-to-match-the-previously-working-version-35-state-full-rollback-so-the-app-behavior-and-ui-match-version-35-rather-than-the-current-version",
+      "title": "Restore the deployed application codebase to match the previously working **Version 35** state (full rollback), so the app behavior and UI match Version 35 rather than the current version.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-replace-all-browser-alert-validation-in-the-lot-size-calculator-with-inline-form-validation-ui-e-g-an-alert-component-and-or-per-field-helper-text-so-missing-invalid-inputs-are-shown-within-the-page-and-do-not-trigger-native-alert-popups",
-      "title": "Replace all browser `alert(...)` validation in the lot size calculator with inline form validation UI (e.g., an Alert component and/or per-field helper text), so missing/invalid inputs are shown within the page and do not trigger native alert popups.",
+      "id": "feature-fix-the-restore-rollback-workflow-so-the-version-35-restore-succeeds-the-previous-restore-attempt-failed-ensure-the-build-pipeline-can-complete-a-version-35-restore-without-throwing-an-implementation-error",
+      "title": "Fix the restore/rollback workflow so the Version 35 restore succeeds (the previous restore attempt failed); ensure the build pipeline can complete a Version 35 restore without throwing an implementation error.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
-    },
-    {
-      "id": "feature-deduplicate-pip-value-logic-by-making-the-lot-size-calculator-use-the-existing-shared-pip-value-utility-frontend-src-lib-pipvalues-ts-instead-of-maintaining-a-separate-hardcoded-pip-table-in-frontend-src-lib-riskcalculator-ts-update-imports-usages-accordingly",
-      "title": "Deduplicate pip value logic by making the lot size calculator use the existing shared pip-value utility (`frontend/src/lib/pipValues.ts`) instead of maintaining a separate hardcoded pip table in `frontend/src/lib/riskCalculator.ts`. Update imports/usages accordingly.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-bottom-navigation-label-for-the-calculator-tab-from-the-generic-calculator-to-lot-size-or-equivalent-while-keeping-routing-tab-id-behavior-unchanged-tab-id-remains-calculator",
-      "title": "Update the bottom navigation label for the calculator tab from the generic \"Calculator\" to \"Lot Size\" (or equivalent) while keeping routing/tab id behavior unchanged (tab id remains `calculator`).",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
     }
   ],
-  "new_feature_requests": [
-    {
-      "id": "AR-1",
-      "summary": "Convert the current implementation to match the older version for an account lot size calculator",
-      "reqIds": [],
-      "status": "pending"
-    }
-  ],
-  "projectName": "Convert Calculator tab to Account Lot Size Calculator (match older version)",
+  "new_feature_requests": [],
+  "projectName": "Restore application to Version 35",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

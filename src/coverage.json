@@ -1,71 +1,64 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T01:48:50.742Z",
+  "generatedAt": "2026-02-11T03:39:43.449Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update the Calculator tab UI copy and structure so it presents as an \"Account Lot Size Calculator\" (instead of \"Risk Calculator\"), including the page title, descriptions, button text, and results labels, while keeping the current inputs (account type, risk mode, balance, risk %, fixed risk, trading pair, custom pip value, entry price, stop loss) and calculation behavior.",
+        "summary": "Restore the deployed application codebase to match the previously working **Version 35** state (full rollback), so the app behavior and UI match Version 35 rather than the current version.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/tabs/RiskCalculatorTab.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/lib/branding.ts",
+          "frontend/index.html",
+          "frontend/src/components/navigation/BottomNav.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/tabs/RiskCalculatorTab.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/lib/branding.ts",
+          "frontend/index.html",
+          "frontend/src/components/navigation/BottomNav.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Replace all browser `alert(...)` validation in the lot size calculator with inline form validation UI (e.g., an Alert component and/or per-field helper text), so missing/invalid inputs are shown within the page and do not trigger native alert popups.",
+        "summary": "Fix the restore/rollback workflow so the Version 35 restore succeeds (the previous restore attempt failed); ensure the build pipeline can complete a Version 35 restore without throwing an implementation error.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/tabs/RiskCalculatorTab.tsx"
+          "frontend/src/hooks/useActorWithStatus.ts",
+          "frontend/src/lib/backendConnectionErrors.ts",
+          "frontend/src/lib/backendDiagnostics.ts",
+          "frontend/public/env.json"
         ],
         "matchedFiles": [
-          "frontend/src/tabs/RiskCalculatorTab.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Deduplicate pip value logic by making the lot size calculator use the existing shared pip-value utility (`frontend/src/lib/pipValues.ts`) instead of maintaining a separate hardcoded pip table in `frontend/src/lib/riskCalculator.ts`. Update imports/usages accordingly.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/riskCalculator.ts",
-          "frontend/src/tabs/RiskCalculatorTab.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/riskCalculator.ts",
-          "frontend/src/tabs/RiskCalculatorTab.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Update the bottom navigation label for the calculator tab from the generic \"Calculator\" to \"Lot Size\" (or equivalent) while keeping routing/tab id behavior unchanged (tab id remains `calculator`).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/hooks/useActorWithStatus.ts",
+          "frontend/src/lib/backendConnectionErrors.ts",
+          "frontend/src/lib/backendDiagnostics.ts"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/index.html",
     "frontend/src/App.tsx",
-    "frontend/src/lib/riskCalculator.ts",
-    "frontend/src/tabs/RiskCalculatorTab.tsx",
+    "frontend/src/components/navigation/BottomNav.tsx",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useActorWithStatus.ts",
+    "frontend/src/lib/backendConnectionErrors.ts",
+    "frontend/src/lib/backendDiagnostics.ts",
+    "frontend/src/lib/branding.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
